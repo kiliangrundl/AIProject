@@ -63,9 +63,6 @@ class mover(object):
     def getPosition(self):
         return self.position
     
-    def getNextPosition(self):
-        return self.position + self.direction
-    
     def getColor(self):
         return self.color
     
@@ -152,11 +149,14 @@ class arena(Canvas):
         update everything
         """
         for mover in self.movers:
-            if mover.move():
-                #DRAWING
-                self.move(mover.getObject(),mover.getDirection()[0]*self.fieldsize,mover.getDirection()[1]*self.fieldsize)
+            mover.move()
+            #DRAWING
+            x = (mover.getPosition()[0]+0.5)*self.fieldsize
+            y = (mover.getPosition()[1]+0.5)*self.fieldsize
+            r = self.fieldsize*0.4
+            self.coords(mover.getObject(),x-r, y-r, x+r, y+r)
             
-        self.after(200, self.refresh)
+        self.after(100, self.refresh)
    
 master = Tk()
 
