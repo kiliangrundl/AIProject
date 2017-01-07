@@ -15,7 +15,6 @@ from Tkinter import *
 import numpy
 from pip.utils.logging import colorama
 from numpy.matlib import rand
-from test.test_math import eps
 
 class Fieldobject(object):
     
@@ -42,14 +41,20 @@ class Mover(Fieldobject):
     """
     def __init__(self, position, color):
         Fieldobject.__init__(self, position, color)
-        self.direction = numpy.array([0,0])
+        self.lastDir = self.direction = numpy.array([0,0])
         self.score = 0
-        self.speed = 0.1
+        self.speed = 0.2
+    
+    def changeDir(self):
+        if self.field.isValid(self.position, self.lastDir * self.speed):
+            self.direction = self.lastDir * self.speed
+            self.counter = 0
+        else:
+            self.counter -= 1
     
     def setDir(self, direction):
-        direction = direction * self.speed
-        if self.field.isValid(self.position, direction):
-            self.direction = direction
+        self.lastDir = direction
+        self.counter = 3        
     
     def up(self):
         """
@@ -73,7 +78,7 @@ class Mover(Fieldobject):
         """
         move right
         """
-        self.setDir(numpy.array([1,0]))
+        self.setDir(numpy.array([1,0]))           
         
     def move(self):
         if self.field.isValid(self.position, self.direction):
@@ -88,11 +93,14 @@ class Mover(Fieldobject):
         return self.direction
     
     
-class Pacman(Mover):
+class Rag(Mover):
     
     def __init__(self, position):
         Mover.__init__(self, position, 'blue')
         self.score = 0
+        
+    def update(self):
+        self.changeDir()
         
     def getScore(self):
         return self.score
@@ -125,6 +133,8 @@ class Monster(Mover):
             self.left()
         else:
             self.right()
+            
+        self.changeDir()
             
 class Coin(Fieldobject):
     
@@ -159,21 +169,21 @@ class Arena(Canvas):
         
         validDir = field - position
         
-        if numpy.linalg.norm(validDir) < eps:
+        if numpy.linalg.norm(validDir) < 1e-6:
             # Is in the center of the field
             for wall in self.walls:
                 if ((field == wall[0]).all() and (newField == wall[1]).all())or \
                    ((field == wall[1]).all() and (newField == wall[0]).all()):
                     return False
         else:
-            if numpy.abs(numpy.dot(validDir, direction)) < eps:
+            if numpy.abs(numpy.dot(validDir, direction)) < 1e-6:
                 return False
         return True
             
         
         
     def addPlayer(self, pacman):
-        self.pacman = pacman
+        self.rag = pacman
         
     def addMonster(self, ghost):
         self.monsters.append(ghost)                    
@@ -184,7 +194,7 @@ class Arena(Canvas):
             for y in range(0,self.fields[1]):
                 self.coins.append(Coin((x,y)))
                  
-        self.pacman.setBattlefield(self)            
+        self.rag.setBattlefield(self)            
         for ghost in self.monsters:
             ghost.setBattlefield(self)
         
@@ -209,11 +219,11 @@ class Arena(Canvas):
             
             
             
-        x = (self.pacman.getPosition()[0]+0.5)*self.fieldsize
-        y = (self.pacman.getPosition()[1]+0.5)*self.fieldsize
+        x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
+        y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
         r = self.fieldsize*0.4
-        w = self.create_oval(x-r, y-r, x+r, y+r, fill=self.pacman.getColor())
-        self.pacman.setTkObject(w)
+        w = self.create_oval(x-r, y-r, x+r, y+r, fill=self.rag.getColor())
+        self.rag.setTkObject(w)
             
         for ghost in self.monsters:
             x = (ghost.getPosition()[0]+0.5)*self.fieldsize
@@ -222,7 +232,7 @@ class Arena(Canvas):
             w = self.create_oval(x-r, y-r, x+r, y+r, fill=ghost.getColor())
             ghost.setTkObject(w)
 
-        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 10, 20, text=str(self.pacman.getScore()))
+        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 10, 20, text=str(self.rag.getScore()))
             
         for coin in self.coins:
             x = (coin.getPosition()[0]+0.5)*self.fieldsize
@@ -237,16 +247,17 @@ class Arena(Canvas):
         update everything
         """
         
-        self.pacman.addScore(-1)
+        self.rag.addScore(-1)
 
-        self.pacman.move()
+        self.rag.move()
+        self.rag.update()
         for ghost in self.monsters:
             ghost.update()
             ghost.move()
         
         for coin in self.coins:
-            if (self.getField(self.pacman.getPosition()) == self.getField(coin.getPosition())).all():
-                self.pacman.addScore(100)
+            if (self.getField(self.rag.getPosition()) == self.getField(coin.getPosition())).all():
+                self.rag.addScore(100)
                 self.coins.remove(coin) 
                 # Drawing
                 self.delete(coin.getTkObject())
@@ -254,10 +265,10 @@ class Arena(Canvas):
 
 
         #DRAWING        
-        x = (self.pacman.getPosition()[0]+0.5)*self.fieldsize
-        y = (self.pacman.getPosition()[1]+0.5)*self.fieldsize
+        x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
+        y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
         r = self.fieldsize*0.4
-        self.coords(self.pacman.getTkObject(),x-r, y-r, x+r, y+r)
+        self.coords(self.rag.getTkObject(),x-r, y-r, x+r, y+r)
         
         for ghost in self.monsters:        
             
@@ -269,11 +280,11 @@ class Arena(Canvas):
             
         #Drawing
         self.delete(self.scorefield)
-        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 10, 20, text=str(self.pacman.getScore()))
+        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 10, 20, text=str(self.rag.getScore()))
         
         lost = False
         for monster in self.monsters:
-            if (self.getField(self.pacman.getPosition()) == self.getField(monster.getPosition())).all():
+            if (self.getField(self.rag.getPosition()) == self.getField(monster.getPosition())).all():
                 lost = True
         
         if self.coins == []:
@@ -297,11 +308,11 @@ for x in [0,3]:
 w.addWall((2,1), (2,2))        
 w.addWall((2,2), (2,3))  
 
-paxman = Pacman((2,1))
-w.addPlayer(paxman)
+rag = Rag((2,1))
+w.addPlayer(rag)
 w.addMonster(Monster((0,0)))
 
-master.bind("<Key>", paxman.keyInput)
+master.bind("<Key>", rag.keyInput)
       
 w.pack()
 
