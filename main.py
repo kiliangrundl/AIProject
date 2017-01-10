@@ -156,13 +156,20 @@ class Coin(Fieldobject):
     
 class Arena(Canvas):
 
-    def __init__(self, master, arenaNo):
-        Canvas.__init__(self, master)
+    def __init__(self, root):
+        Canvas.__init__(self, root)
         self.fieldsize=50        
         self.walls = []
         self.monsters = []
-        
+            
+    def start(self, *keys):
+        del self.walls[:]
+        del self.monsters[:]
+        self.rag.addScore(-self.rag.getScore())
+        self.rag.setDir(numpy.array([0,0]))
         self.initArena1()
+        w.initialize()
+        root.after(1000, w.refresh)
 
     def initArena1(self):
                 
@@ -233,13 +240,15 @@ class Arena(Canvas):
         return True
         
     def addPlayer(self, rag):
-        self.rag = rag
-        self.rag.setPosition(self.playerstart)
+        self.rag = rag        
         
     def addMonster(self, ghost):
         self.monsters.append(ghost)                    
         
     def initialize(self):  
+        
+        self.rag.setPosition(self.playerstart)
+        
         self.coins = []
         for x in range(0,self.fields[0]):
             for y in range(0,self.fields[1]):
@@ -302,9 +311,9 @@ class Arena(Canvas):
 
         self.rag.move()
         self.rag.update()
-        for ghost in self.monsters:
-            ghost.update()
-            ghost.move()
+        for monster in self.monsters:
+            monster.update()
+            monster.move()
         
         for coin in self.coins:
             if (self.getField(self.rag.getPosition()) == self.getField(coin.getPosition())).all():
@@ -321,12 +330,12 @@ class Arena(Canvas):
         r = self.fieldsize*0.4
         self.coords(self.rag.getTkObject(),x-r, y-r, x+r, y+r)
         
-        for ghost in self.monsters:        
+        for monster in self.monsters:        
             
-            x = (ghost.getPosition()[0]+0.5)*self.fieldsize
-            y = (ghost.getPosition()[1]+0.5)*self.fieldsize
+            x = (monster.getPosition()[0]+0.5)*self.fieldsize
+            y = (monster.getPosition()[1]+0.5)*self.fieldsize
             r = self.fieldsize*0.4
-            self.coords(ghost.getTkObject(),x-r, y-r, x+r, y+r)
+            self.coords(monster.getTkObject(),x-r, y-r, x+r, y+r)
             
             
         #Drawing
@@ -348,20 +357,27 @@ class Arena(Canvas):
         else:
             self.after(10, self.refresh)
    
-master = Tk()
+root = Tk()
 
-w = Arena(master, 1)
+w = Arena(root)
   
 
 rag = Rag()
 w.addPlayer(rag)
-master.bind("<Key>", rag.keyInput)
+root.bind("<Key>", rag.keyInput)
 
-w.initialize()
 w.pack(fill=BOTH, expand=1)
-master.resizable(width=False, height=False)
+root.resizable(width=False, height=False)
 
-master.after(1000, w.refresh)
+# create a toplevel menu
+menubar = Menu(root)
+menubar.add_command(label="Restart", command=w.start)
+root.bind_all("<Control-r>", w.start)
+# display the menu
+root.config(menu=menubar)
+
+root.after(10, w.start)
+
 mainloop()    
 
 
