@@ -44,6 +44,8 @@ class Mover(Fieldobject):
     """
     def __init__(self, color):
         Fieldobject.__init__(self, color)
+
+    def initialize(self):
         self.lastDir = self.direction = numpy.array([0,0])
         self.score = 0
         self.speed = 0.1
@@ -58,7 +60,7 @@ class Mover(Fieldobject):
     
     def setDir(self, direction):
         self.lastDir = direction
-        self.counter = int(1 / self.speed)
+        self.counter = int(5 / self.speed)
     
     def up(self):
         """
@@ -127,10 +129,14 @@ class Monster(Mover):
     def __init__(self):
         Mover.__init__(self, 'red')
         
+    def initialize(self):
+        Mover.initialize(self)
+        self.direction = numpy.array([1.,0])
+        
     def update(self):        
         number = rand(1)
         
-        prob = 0.2 # probability to change direction
+        prob = 0.1 # probability to change direction
         
         if not self.field.isValid(self.position, self.direction) or number < prob:
             #chose a new direction if the current one is not valid any more or with a certain probablity
@@ -165,8 +171,6 @@ class Arena(Canvas):
     def start(self, *keys):
         del self.walls[:]
         del self.monsters[:]
-        self.rag.addScore(-self.rag.getScore())
-        self.rag.setDir(numpy.array([0,0]))
         self.initArena1()
         w.initialize()
         root.after(1000, w.refresh)
@@ -247,7 +251,6 @@ class Arena(Canvas):
         
     def initialize(self):  
         
-        self.rag.setPosition(self.playerstart)
         
         self.coins = []
         for x in range(0,self.fields[0]):
@@ -256,11 +259,15 @@ class Arena(Canvas):
                 if not any((newField == x).all() for x in self.walls) and \
                     not any((newField == x).all() for x in self.monsterStarts):
                     self.coins.append(Coin((x,y)))
-                 
+
+        self.rag.initialize()
+        self.rag.setPosition(self.playerstart)
         self.rag.setBattlefield(self)         
+                 
         for monster in self.monsters:
             monster.setBattlefield(self)
             monster.setPosition(random.choice(self.monsterStarts))
+            monster.initialize()
             
         
         # DRAWING
@@ -344,7 +351,7 @@ class Arena(Canvas):
         
         lost = False
         for monster in self.monsters:
-            if (self.getField(self.rag.getPosition()) == self.getField(monster.getPosition())).all():
+            if numpy.linalg.norm(self.rag.getPosition() - monster.getPosition(),2) < 0.5:
                 lost = True
                 self.rag.addScore(-500)
                 break
