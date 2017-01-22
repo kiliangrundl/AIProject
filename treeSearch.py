@@ -77,6 +77,42 @@ class SailProblem(SearchProblem):
         else:
             return False
             
+class TestGraph(SearchProblem):
+    
+    def getPossibleActions(self, s):
+        if s == 'S':
+            actions = [Action('d',3), Action('e',9), Action('p',1)]
+        if s == 'a':
+            actions = []
+        if s == 'b':
+            actions = [Action('a',2)]
+        if s == 'c':
+            actions = [Action('a',1)]
+        if s == 'd':
+            actions = [Action('b',1), Action('c',8), Action('e',2)]
+        if s == 'e':
+            actions = [Action('h',8), Action('r',2)]
+        if s == 'f':
+            actions = [Action('c',1), Action('G',2)]
+        if s == 'h':
+            actions = [Action('p',1), Action('q',1)]
+        if s == 'p':
+            actions = [Action('q',15)]
+        if s == 'q':
+            actions = []
+        if s == 'r':
+            actions = [Action('f',1)]            
+        
+        return actions
+    
+    def getNewPosition(self, s, action):
+        return action.getMove()
+        
+    def solved(self, s):
+        if s == 'G':
+            return True
+        else:
+            return False
 
 class SearchStrategy:
     """Is the mother class of all search strategies
@@ -102,21 +138,14 @@ class SearchStrategy:
         
     def getCurrentState(self):
         return self.currentFringe.getPath()[-1]
-        
-    def findCandidate(self):
-        ''' Find a new candidate for the search '''
-        self.possibleActions = self.problem.getPossibleActions(self.getCurrentState())        
-        if self.possibleActions == []:
-            return False
-        else:
-            return True
     
-    def updateFringe(self, newCandidates):
+    def updateFringe(self, actions):
         'Add the Candidates to the fringe'
     
     def explore(self):
         ''' Explore the problem'''
-        self.updateFringe(self.possibleActions)
+        possibleActions = self.problem.getPossibleActions(self.getCurrentState())
+        self.updateFringe(possibleActions)
         
 class UninformedSearch(SearchStrategy):
     def __init__(self, problem, startState):
@@ -130,7 +159,10 @@ class UninformedSearch(SearchStrategy):
                 self.fringe.add(FringeMember(self.currentFringe.getPath()+[newPos], self.currentFringe.getCostTotal()+action.getCost()))
                 
         self.fringe.remove(self.currentFringe)
-        self.updateCurrentFringemember()
+        try:
+            self.updateCurrentFringemember()
+        except:
+            self.currentFringe = None
         
 class DepthFirstSearch(UninformedSearch):
         
@@ -156,7 +188,7 @@ def treeSearch(problem, strategy):
     #problem.initialize()
     while True:
         'If there are no new candidate the search has failed'
-        if not strategy.findCandidate():
+        if strategy.getCurrentFringe() is None:
             break
         
         if problem.solved(strategy.getCurrentState()):
@@ -176,8 +208,10 @@ def treeSearch(problem, strategy):
     return found
             
         
-s = (4,4) # initial State
+s = (5,4) # initial State
 problem = SailProblem([(8,8)], 10, 10)
+#s = 'S'
+#problem = TestGraph()
 
    
 print("DepthFirstSearch")
