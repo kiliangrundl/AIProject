@@ -42,6 +42,9 @@ class SearchProblem:
     def getPossibleActions(self, s):
         'Get possible candidates for the current state'
         
+    def getGoals(self):
+        'Return possible goal states (for heuristics), TODO: maybe better options available'
+        
     def getNewPosition(self, s, action):
         'Return the new position'
     
@@ -66,6 +69,10 @@ class SailProblem(SearchProblem):
         if s[1] < self.yFields:
             actions.append(Action((0,1),1))
         return actions
+    
+    def getGoals(self):
+        SearchProblem.getGoals(self)
+        return self.g
     
     def getNewPosition(self, s, action):
         return (s[0]+action.getMove()[0],s[1]+action.getMove()[1]) 
@@ -105,6 +112,10 @@ class TestGraph(SearchProblem):
         
         return actions
     
+    def getGoals(self):
+        SearchProblem.getGoals(self)
+        return ['G']
+    
     def getNewPosition(self, s, action):
         return action.getMove()
         
@@ -141,18 +152,6 @@ class SearchStrategy:
     
     def updateFringe(self, actions):
         'Add the Candidates to the fringe'
-    
-    def explore(self):
-        ''' Explore the problem'''
-        possibleActions = self.problem.getPossibleActions(self.getCurrentState())
-        self.updateFringe(possibleActions)
-        
-class UninformedSearch(SearchStrategy):
-    def __init__(self, problem, startState):
-        SearchStrategy.__init__(self, problem, startState)
-
-    def updateFringe(self, actions):
-        SearchStrategy.updateFringe(self, actions)        
         for action in actions:
             newPos = self.problem.getNewPosition(self.getCurrentState(), action)
             if newPos not in self.currentFringe.getPath():
@@ -162,23 +161,47 @@ class UninformedSearch(SearchStrategy):
         try:
             self.updateCurrentFringemember()
         except:
-            self.currentFringe = None
+            self.currentFringe = None        
+    
+    def explore(self):
+        ''' Explore the problem'''
+        possibleActions = self.problem.getPossibleActions(self.getCurrentState())
+        self.updateFringe(possibleActions)
         
-class DepthFirstSearch(UninformedSearch):
+class DepthFirstSearch(SearchStrategy):
         
     def updateCurrentFringemember(self):
         self.currentFringe = max(self.fringe, key=lambda x: len(x.getPath()))
         
-class BreathFirstSearch(UninformedSearch):
+class BreathFirstSearch(SearchStrategy):
     
     def updateCurrentFringemember(self):
         self.currentFringe = min(self.fringe, key=lambda x: len(x.getPath()))
         
-class UniformCostSearch(UninformedSearch):
+class UniformCostSearch(SearchStrategy):
     
     def updateCurrentFringemember(self):
         self.currentFringe = min(self.fringe, key=lambda x: x.getCostTotal())        
+      
+def manhattenDistanceSail(fringe, problem):
+
+    pos = fringe.getPath()[-1]
+    
+    def distMeas(y):
+        return (y[0]-pos[0])**2+(y[1]-pos[1])**2
+    
+    return distMeas(min(problem.getGoals(), key=distMeas))
+      
+class GreedySearch(SearchStrategy):
+    
+    def __init__(self, problem, startState, heuristic):
+        SearchStrategy.__init__(self, problem, startState)
+        self.heuristic = heuristic
         
+    def updateCurrentFringemember(self):
+        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, problem))
+
+  
 def treeSearch(problem, strategy):
     ':type problem: SearchProblem'
     ':type strategy: SearchStrategy'
@@ -208,17 +231,20 @@ def treeSearch(problem, strategy):
     return found
             
         
-s = (5,4) # initial State
+s = (4,4) # initial State
 problem = SailProblem([(8,8)], 10, 10)
 #s = 'S'
 #problem = TestGraph()
 
    
 print("DepthFirstSearch")
-treeSearch(problem, DepthFirstSearch(problem, s))
+#treeSearch(problem, DepthFirstSearch(problem, s))
 
 print("BreathFirstSearch")
-treeSearch(problem, BreathFirstSearch(problem, s))
+#treeSearch(problem, BreathFirstSearch(problem, s))
     
 print("UniformCostSearch")
 treeSearch(problem, UniformCostSearch(problem, s))
+
+print("GreedySearch")
+treeSearch(problem, GreedySearch(problem, s, manhattenDistanceSail))
