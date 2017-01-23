@@ -13,9 +13,10 @@ gernerally the directions are
 
 from Tkinter import *
 import numpy
-from pip.utils.logging import colorama
 from numpy.matlib import rand
 import random
+
+import treeSearch
 
 class Fieldobject(object):
     
@@ -160,18 +161,19 @@ class Coin(Fieldobject):
         self.setPosition(position)
      
     
-class Arena(Canvas):
+class Arena(Canvas, treeSearch.SearchProblem):
 
     def __init__(self, root):
         Canvas.__init__(self, root)
         self.fieldsize=50        
         self.walls = []
         self.monsters = []
+        self.coins = []
             
     def start(self, *keys):
         del self.walls[:]
         del self.monsters[:]
-        self.initArena1()
+        self.initArena2()
         w.initialize()
         root.after(1000, w.refresh)
 
@@ -212,6 +214,78 @@ class Arena(Canvas):
             for x in [1,7]:
                 self.addWall((x,y))
                 
+        self.coins = []
+        for x in range(0,self.fields[0]):
+            for y in range(0,self.fields[1]):
+                newField = numpy.array([x,y])
+                if not any((newField == x).all() for x in self.walls) and \
+                    not any((newField == x).all() for x in self.monsterStarts):
+                    self.coins.append(Coin((x,y)))
+                
+    def initArena2(self):
+                
+        self.fields = numpy.array([17, 8])
+        self.playerstart = numpy.array([7,2])
+        self.monsterStarts = []
+        #self.monsterStarts.append(numpy.array([4,4]))
+        #self.monsterStarts.append(numpy.array([4,5]))
+        
+        #for i in range(2):
+        #    self.addMonster(Monster())
+        
+        
+        self.coins.append(Coin((0,7)))
+        
+        self.addWall((1,0))
+            
+        for y in range(0,2):
+            self.addWall((8,y))
+            
+        for y in range(0,2):
+            self.addWall((8,y))
+            
+        for y in range(0,4):
+            self.addWall((10,y))
+            
+        for x in range(3,7):
+            self.addWall((x,1))
+            
+        for x in range(11,15):
+            self.addWall((x,1))
+
+        for x in range(0,4):
+            self.addWall((x,2))
+            
+        self.addWall((3,3))           
+
+        for x in range(5,9):
+            self.addWall((x,3))
+          
+        self.addWall((11,3)) 
+        
+        for x in range(13,17):
+            self.addWall((x,3))        
+          
+        self.addWall((5,4))  
+        
+        for x in range(1,4):
+            self.addWall((x,4))
+            
+        self.addWall((13,4))
+        
+        self.addWall((7,5))
+        self.addWall((8,5))
+        self.addWall((10,5))
+        self.addWall((11,5))
+        self.addWall((15,5))
+        
+        for x in range(0,8):
+            self.addWall((x,6))
+            
+        for x in range(11,16):
+            self.addWall((x,6))            
+            
+        self.addWall((9,7)) 
                     
    
     def addWall(self, field):
@@ -250,15 +324,6 @@ class Arena(Canvas):
         self.monsters.append(ghost)                    
         
     def initialize(self):  
-        
-        
-        self.coins = []
-        for x in range(0,self.fields[0]):
-            for y in range(0,self.fields[1]):
-                newField = numpy.array([x,y])
-                if not any((newField == x).all() for x in self.walls) and \
-                    not any((newField == x).all() for x in self.monsterStarts):
-                    self.coins.append(Coin((x,y)))
 
         self.rag.initialize()
         self.rag.setPosition(self.playerstart)

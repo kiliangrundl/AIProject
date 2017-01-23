@@ -84,7 +84,10 @@ class SailProblem(SearchProblem):
         else:
             return False
             
-class TestGraph(SearchProblem):
+class MainTestSearch(SearchProblem):
+    """
+    This is the graph that always appears in the lecture
+    """
     
     def getPossibleActions(self, s):
         if s == 'S':
@@ -125,6 +128,51 @@ class TestGraph(SearchProblem):
         else:
             return False
 
+class EasyTestSearchOne(SearchProblem):
+    """
+    This is the graph appears in between
+    """
+    
+    def getPossibleActions(self, s):
+        if s == 'S':
+            actions = [Action('A',1), Action('G',5)]
+        if s == 'A':
+            actions = [Action('G',3)]
+        return actions
+    
+    def getGoals(self):
+        SearchProblem.getGoals(self)
+        return ['G']
+    
+    def getNewPosition(self, s, action):
+        return action.getMove()
+        
+    def solved(self, s):
+        if s == 'G':
+            return True
+        else:
+            return False
+        
+def pessimisticHeuristicEasyTestSearchOne(fringe, problem):
+    pos = fringe.getPath()[-1]
+    
+    if pos == 'S':
+        return 7
+    if pos == 'A':
+        return 6
+    if pos == 'G':
+        return 0
+    
+def optimisticHeuristicEasyTestSearchOne(fringe, problem):
+    pos = fringe.getPath()[-1]
+    
+    if pos == 'S':
+        return 3
+    if pos == 'A':
+        return 2
+    if pos == 'G':
+        return 0
+    
 class SearchStrategy:
     """Is the mother class of all search strategies
 
@@ -199,9 +247,17 @@ class GreedySearch(SearchStrategy):
         self.heuristic = heuristic
         
     def updateCurrentFringemember(self):
-        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, problem))
+        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, self.problem))
+        
+class AstarSearch(SearchStrategy):
+    
+    def __init__(self, problem, startState, heuristic):
+        SearchStrategy.__init__(self, problem, startState)
+        self.heuristic = heuristic
+        
+    def updateCurrentFringemember(self):
+        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, self.problem)+x.getCostTotal())
 
-  
 def treeSearch(problem, strategy):
     ':type problem: SearchProblem'
     ':type strategy: SearchStrategy'
@@ -230,21 +286,4 @@ def treeSearch(problem, strategy):
     print(end - start)
     return found
             
-        
-s = (4,4) # initial State
-problem = SailProblem([(8,8)], 10, 10)
-#s = 'S'
-#problem = TestGraph()
 
-   
-print("DepthFirstSearch")
-#treeSearch(problem, DepthFirstSearch(problem, s))
-
-print("BreathFirstSearch")
-#treeSearch(problem, BreathFirstSearch(problem, s))
-    
-print("UniformCostSearch")
-treeSearch(problem, UniformCostSearch(problem, s))
-
-print("GreedySearch")
-treeSearch(problem, GreedySearch(problem, s, manhattenDistanceSail))
