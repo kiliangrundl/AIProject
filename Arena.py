@@ -39,6 +39,9 @@ class Mover(Fieldobject):
     def setDir(self, direction):
         self.lastDir = direction
         self.counter = int(5 / self.speed)
+        
+    def getSpeed(self):
+        return self.speed
     
     def up(self):
         """
@@ -143,11 +146,32 @@ class Arena(treeSearch.SearchProblem):
         self.walls = []
         self.monsters = []
         self.coins = []
+        
+    def getStartState(self):
+        treeSearch.SearchProblem.getStartState(self)
+        return tuple(self.playerstart)
+    
+    def getPossibleActions(self, s):
+        treeSearch.SearchProblem.getPossibleActions(self, s)
+        
+        actions = []
+        
+        for direction in [numpy.array([0,-1]), numpy.array([0,1]), numpy.array([-1,0]), numpy.array([1,0])]:
+            if self.isValid(numpy.array(s), direction):
+                actions.append(treeSearch.Action(tuple(direction), 1))
+        
+        return actions
+    
+    def getNewPosition(self, s, action):
+        return tuple(numpy.array(s)+numpy.array(action.getMove()))
+            
+    def solved(self, s):
+        return tuple(self.coins[0].getPosition()) == s
             
     def start(self, *keys):
         del self.walls[:]
         del self.monsters[:]
-        self.initArena1()
+        self.initArena2()
         self.initialize()        
 
     def initArena1(self):
@@ -198,7 +222,7 @@ class Arena(treeSearch.SearchProblem):
     def initArena2(self):
                 
         self.fields = numpy.array([17, 8])
-        self.playerstart = numpy.array([7,2])
+        self.playerstart = numpy.array([0,1])
         self.monsterStarts = []
         #self.monsterStarts.append(numpy.array([4,4]))
         #self.monsterStarts.append(numpy.array([4,5]))

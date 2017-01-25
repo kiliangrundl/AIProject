@@ -1,26 +1,31 @@
-from treeSearch import *
+import treeSearch as tS
+from Arena import Arena
 
         
-s = (4,4) # initial State
-problem = SailProblem([(14,18)], 20, 20)
-#s = 'S'
-#problem = MainTestSearch()
-#s = 'S' # initial State
-#problem = EasyTestSearchOne()
-heuristic = manhattenDistanceSail
+problem = tS.SailProblem([(14,18)], 20, 20)
+#problem = tS.MainTestSearch()
+#problem = tS.EasyTestSearchOne()
+
+problem = Arena()
+problem.initArena2()
+
+# Set heuristic
+hC = tS.manhattenDistance2D([(14,18)])
+hC = tS.manhattenDistance2D([(0,7)]) # for Arena2
+heuristic = hC.heuristicFun
 
    
 print("DepthFirstSearch")
-#treeSearch(problem, DepthFirstSearch(problem, s))
+#treeSearch(problem, tS.DepthFirstSearch(problem, s))
 
 print("BreathFirstSearch")
-#treeSearch(problem, BreathFirstSearch(problem, s))
+#treeSearch(problem, tS.BreathFirstSearch(problem, s))
     
 print("UniformCostSearch")
-#treeSearch(problem, UniformCostSearch(problem, s))
+#treeSearch(problem, tS.UniformCostSearch(problem, s))
 
 print("GreedySearch")
-treeSearch(problem, GreedySearch(problem, s, heuristic))
+tS.treeSearch(problem, tS.GreedySearch(problem, heuristic))
 
 print("AstarSearch")
-treeSearch(problem, AstarSearch(problem, s, heuristic))
+tS.treeSearch(problem, tS.AstarSearch(problem, heuristic))

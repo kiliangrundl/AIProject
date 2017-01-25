@@ -36,8 +36,9 @@ class SearchProblem:
     """Is the mother class of all search problems
 
     """
-    def __init__(self):
-        ''' Initialize the problem '''
+        
+    def getStartState(self):
+        ''' get the start state of a problem '''
         
     def getPossibleActions(self, s):
         'Get possible candidates for the current state'
@@ -56,6 +57,10 @@ class SailProblem(SearchProblem):
         self.g = g
         self.xFields = xFields
         self.yFields = yFields
+        
+    def getStartState(self):
+        SearchProblem.getStartState(self)
+        return (4,4)
         
     def getPossibleActions(self, s):
         SearchProblem.getPossibleActions(self, s)
@@ -88,6 +93,10 @@ class MainTestSearch(SearchProblem):
     """
     This is the graph that always appears in the lecture
     """
+    
+    def getStartState(self):
+        SearchProblem.getStartState(self)
+        return 'S'
     
     def getPossibleActions(self, s):
         if s == 'S':
@@ -132,6 +141,10 @@ class EasyTestSearchOne(SearchProblem):
     """
     This is the graph appears in between
     """
+    
+    def getStartState(self):
+        SearchProblem.getStartState(self)
+        return 'S'
     
     def getPossibleActions(self, s):
         if s == 'S':
@@ -181,12 +194,12 @@ class SearchStrategy:
         other_member: Another member
     """
     
-    def __init__(self, problem, startState):
+    def __init__(self, problem):
         ':type problem: SearchProblem'
         self.problem = problem
 
         self.fringe = set()
-        self.currentFringe = FringeMember([startState], 0)
+        self.currentFringe = FringeMember([problem.getStartState()], 0)
         self.fringe.add(self.currentFringe)
         
     def updateCurrentFringemember(self):
@@ -206,10 +219,8 @@ class SearchStrategy:
                 self.fringe.add(FringeMember(self.currentFringe.getPath()+[newPos], self.currentFringe.getCostTotal()+action.getCost()))
                 
         self.fringe.remove(self.currentFringe)
-        try:
+        if self.fringe:
             self.updateCurrentFringemember()
-        except:
-            self.currentFringe = None        
     
     def explore(self):
         ''' Explore the problem'''
@@ -231,19 +242,24 @@ class UniformCostSearch(SearchStrategy):
     def updateCurrentFringemember(self):
         self.currentFringe = min(self.fringe, key=lambda x: x.getCostTotal())        
       
-def manhattenDistanceSail(fringe, problem):
-
-    pos = fringe.getPath()[-1]
+      
+class manhattenDistance2D():
     
-    def distMeas(y):
-        return (y[0]-pos[0])**2+(y[1]-pos[1])**2
+    def __init__(self, goals):
+        self.goals = goals
     
-    return distMeas(min(problem.getGoals(), key=distMeas))
+    def heuristicFun(self, fringe, problem):
+        pos = fringe.getPath()[-1]
+        
+        def distMeas(y):
+            return abs(y[0]-pos[0])+abs(y[1]-pos[1])
+        
+        return distMeas(min(self.goals, key=distMeas))
       
 class GreedySearch(SearchStrategy):
     
-    def __init__(self, problem, startState, heuristic):
-        SearchStrategy.__init__(self, problem, startState)
+    def __init__(self, problem, heuristic):
+        SearchStrategy.__init__(self, problem)
         self.heuristic = heuristic
         
     def updateCurrentFringemember(self):
@@ -251,8 +267,8 @@ class GreedySearch(SearchStrategy):
         
 class AstarSearch(SearchStrategy):
     
-    def __init__(self, problem, startState, heuristic):
-        SearchStrategy.__init__(self, problem, startState)
+    def __init__(self, problem, heuristic):
+        SearchStrategy.__init__(self, problem)
         self.heuristic = heuristic
         
     def updateCurrentFringemember(self):
