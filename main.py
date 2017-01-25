@@ -11,7 +11,7 @@ gernerally the directions are
  y 
 """
 
-from Tkinter import *
+import Tkinter
 import numpy
 from numpy.matlib import rand
 import random
@@ -20,9 +20,8 @@ import treeSearch
 
 class Fieldobject(object):
     
-    def __init__(self, color):
+    def __init__(self):
         object.__init__(self)        
-        self.color = color
     
     def setPosition(self, position):
         self.position = numpy.array([float(position[0]),float(position[1])])
@@ -30,21 +29,13 @@ class Fieldobject(object):
     def getPosition(self):
         return self.position
     
-    def getColor(self):
-        return self.color
-    
-    def setTkObject(self, tkobject):
-        self.tkobject = tkobject
-        
-    def getTkObject(self):
-        return self.tkobject
 
 class Mover(Fieldobject):
     """
       Class for any Mover
     """
-    def __init__(self, color):
-        Fieldobject.__init__(self, color)
+    def __init__(self):
+        Fieldobject.__init__(self)
 
     def initialize(self):
         self.lastDir = self.direction = numpy.array([0,0])
@@ -98,12 +89,11 @@ class Mover(Fieldobject):
         
     def getDirection(self):
         return self.direction
-    
-    
-class Rag(Mover):
+       
+class RAG(Mover):
     
     def __init__(self):
-        Mover.__init__(self, 'blue')
+        Mover.__init__(self)
         self.score = 0
         
     def update(self):
@@ -128,7 +118,7 @@ class Rag(Mover):
        
 class Monster(Mover):
     def __init__(self):
-        Mover.__init__(self, 'red')
+        Mover.__init__(self)
         
     def initialize(self):
         Mover.initialize(self)
@@ -157,14 +147,12 @@ class Monster(Mover):
 class Coin(Fieldobject):
     
     def __init__(self, position):
-        Fieldobject.__init__(self, 'yellow')
+        Fieldobject.__init__(self)
         self.setPosition(position)
-     
-    
-class Arena(Canvas, treeSearch.SearchProblem):
+         
+class Arena(treeSearch.SearchProblem):
 
-    def __init__(self, root):
-        Canvas.__init__(self, root)
+    def __init__(self):
         self.fieldsize=50        
         self.walls = []
         self.monsters = []
@@ -173,9 +161,8 @@ class Arena(Canvas, treeSearch.SearchProblem):
     def start(self, *keys):
         del self.walls[:]
         del self.monsters[:]
-        self.initArena2()
-        w.initialize()
-        root.after(1000, w.refresh)
+        self.initArena1()
+        w.initialize()        
 
     def initArena1(self):
                 
@@ -287,7 +274,6 @@ class Arena(Canvas, treeSearch.SearchProblem):
             
         self.addWall((9,7)) 
                     
-   
     def addWall(self, field):
         field = numpy.array(field)
         if not any((field == x).all() for x in self.walls):
@@ -333,7 +319,44 @@ class Arena(Canvas, treeSearch.SearchProblem):
             monster.setBattlefield(self)
             monster.setPosition(random.choice(self.monsterStarts))
             monster.initialize()
-            
+        
+    def refresh(self):
+        """
+        update everything
+        """
+        
+        self.rag.addScore(-1)
+
+        self.rag.update()
+        self.rag.move()
+        
+        for monster in self.monsters:
+            monster.update()
+            monster.move()
+        
+        for coin in self.coins:
+            if (self.getField(self.rag.getPosition()) == self.getField(coin.getPosition())).all():
+                self.rag.addScore(100)
+                self.coins.remove(coin)
+                break
+
+class ArenaCanvas(Arena, Tkinter.Canvas):
+
+    def __init__(self, root):
+        Arena.__init__(self)
+        Tkinter.Canvas.__init__(self, root)
+        self.fieldsize=50        
+        self.walls = []
+        self.monsters = []
+        self.coins = []
+        
+    def start(self, *keys):
+        Arena.start(self, *keys)
+        self.master.after(1000, w.refresh)
+      
+    def initialize(self):
+        Arena.initialize(self)
+        self.TkObjects = {}
         
         # DRAWING
         self.battlefield = self.create_rectangle(0,0,self.fields[0]*self.fieldsize,self.fields[1] * self.fieldsize,fill='green')
@@ -353,15 +376,13 @@ class Arena(Canvas, treeSearch.SearchProblem):
             x = (coin.getPosition()[0]+0.5)*self.fieldsize
             y = (coin.getPosition()[1]+0.5)*self.fieldsize
             r = self.fieldsize*0.1
-            w = self.create_oval(x-r, y-r, x+r, y+r, fill=coin.getColor())
-            coin.setTkObject(w)            
+            self.TkObjects[coin] = self.create_oval(x-r, y-r, x+r, y+r, fill='yellow')
             
             
         x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
         y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
         r = self.fieldsize*0.4
-        w = self.create_oval(x-r, y-r, x+r, y+r, fill=self.rag.getColor())
-        self.rag.setTkObject(w)
+        self.TkObjects[self.rag] = self.create_oval(x-r, y-r, x+r, y+r, fill='blue')
         
         self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 30, 20, text=str(self.rag.getScore()))
             
@@ -369,45 +390,30 @@ class Arena(Canvas, treeSearch.SearchProblem):
             x = (monster.getPosition()[0]+0.5)*self.fieldsize
             y = (monster.getPosition()[1]+0.5)*self.fieldsize
             r = self.fieldsize*0.4
-            w = self.create_oval(x-r, y-r, x+r, y+r, fill=monster.getColor())
-            monster.setTkObject(w)
+            self.TkObjects[monster] = self.create_oval(x-r, y-r, x+r, y+r, fill='orange')
         
-        self.master.geometry('{}x{}'.format(self.fields[0]*self.fieldsize, self.fields[1] * self.fieldsize))
+        self.master.geometry('{}x{}'.format(self.fields[0]*self.fieldsize, self.fields[1] * self.fieldsize))     
         
     def refresh(self):
-        """
-        update everything
-        """
+        Arena.refresh(self)
         
-        self.rag.addScore(-1)
-
-        self.rag.move()
-        self.rag.update()
-        for monster in self.monsters:
-            monster.update()
-            monster.move()
-        
-        for coin in self.coins:
-            if (self.getField(self.rag.getPosition()) == self.getField(coin.getPosition())).all():
-                self.rag.addScore(100)
-                self.coins.remove(coin) 
-                # Drawing
-                self.delete(coin.getTkObject())
-                break
-
+        # Drawing
+        delCoins = set(self.TkObjects.keys()) - set(self.coins + [self.rag] + self.monsters)
+        for coin in delCoins:
+            self.delete(self.TkObjects[coin])
+            del self.TkObjects[coin] 
 
         #DRAWING        
         x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
         y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
         r = self.fieldsize*0.4
-        self.coords(self.rag.getTkObject(),x-r, y-r, x+r, y+r)
+        self.coords(self.TkObjects[self.rag],x-r, y-r, x+r, y+r)
         
         for monster in self.monsters:        
-            
             x = (monster.getPosition()[0]+0.5)*self.fieldsize
             y = (monster.getPosition()[1]+0.5)*self.fieldsize
             r = self.fieldsize*0.4
-            self.coords(monster.getTkObject(),x-r, y-r, x+r, y+r)
+            self.coords(self.TkObjects[monster],x-r, y-r, x+r, y+r)
             
             
         #Drawing
@@ -427,22 +433,22 @@ class Arena(Canvas, treeSearch.SearchProblem):
         elif lost:
             self.create_text(self.fields[0]*self.fieldsize / 2, self.fields[1]*self.fieldsize / 2 , text='You Lost, Score = ' + str(self.rag.getScore()), fill='white')
         else:
-            self.after(10, self.refresh)
-   
-root = Tk()
+            self.after(10, self.refresh)   
 
-w = Arena(root)
+root = Tkinter.Tk()
+
+w = ArenaCanvas(root)
+rag = RAG()
+w.addPlayer(rag)
   
 
-rag = Rag()
-w.addPlayer(rag)
 root.bind("<Key>", rag.keyInput)
 
-w.pack(fill=BOTH, expand=1)
+w.pack(fill=Tkinter.BOTH, expand=1)
 root.resizable(width=False, height=False)
 
 # create a toplevel menu
-menubar = Menu(root)
+menubar = Tkinter.Menu(root)
 menubar.add_command(label="Restart", command=w.start)
 root.bind_all("<Control-r>", w.start)
 # display the menu
@@ -450,7 +456,7 @@ root.config(menu=menubar)
 
 root.after(10, w.start)
 
-mainloop()    
+Tkinter.mainloop()    
 
 
       
