@@ -171,118 +171,8 @@ class Arena(treeSearch.SearchProblem):
     def start(self, *keys):
         del self.walls[:]
         del self.monsters[:]
-        self.initArena2()
+        self.initArena()
         self.initialize()        
-
-    def initArena1(self):
-                
-        self.fields = numpy.array([9, 9])
-        self.playerstart = numpy.array([0,0])
-        self.monsterStarts = []
-        self.monsterStarts.append(numpy.array([4,4]))
-        self.monsterStarts.append(numpy.array([4,5]))
-        
-        for i in range(2):
-            self.addMonster(Monster())
-        
-        #AROUND the monster Start
-        for x in range(3,6):
-            y = 3
-            self.addWall((x,y))
-            
-        for y in range(4,6):
-            for x in [3,5]:
-                self.addWall((x,y))
-        
-        #OUTSIDE    
-        for x in range(1,4):
-            for y in [1,7]:
-                self.addWall((x,y))
-            
-        for x in range(5,8):
-            for y in [1,7]:
-                self.addWall((x,y))
-                
-        for y in range(1,4):
-            for x in [1,7]:
-                self.addWall((x,y))
-                
-        for y in range(5,8):
-            for x in [1,7]:
-                self.addWall((x,y))
-                
-        self.coins = []
-        for x in range(0,self.fields[0]):
-            for y in range(0,self.fields[1]):
-                newField = numpy.array([x,y])
-                if not any((newField == x).all() for x in self.walls) and \
-                    not any((newField == x).all() for x in self.monsterStarts):
-                    self.coins.append(Coin((x,y)))
-                
-    def initArena2(self):
-                
-        self.fields = numpy.array([17, 8])
-        self.playerstart = numpy.array([0,1])
-        self.monsterStarts = []
-        #self.monsterStarts.append(numpy.array([4,4]))
-        #self.monsterStarts.append(numpy.array([4,5]))
-        
-        #for i in range(2):
-        #    self.addMonster(Monster())
-        
-        
-        self.coins.append(Coin((0,7)))
-        
-        self.addWall((1,0))
-            
-        for y in range(0,2):
-            self.addWall((8,y))
-            
-        for y in range(0,2):
-            self.addWall((8,y))
-            
-        for y in range(0,4):
-            self.addWall((10,y))
-            
-        for x in range(3,7):
-            self.addWall((x,1))
-            
-        for x in range(11,15):
-            self.addWall((x,1))
-
-        for x in range(0,4):
-            self.addWall((x,2))
-            
-        self.addWall((3,3))           
-
-        for x in range(5,9):
-            self.addWall((x,3))
-          
-        self.addWall((11,3)) 
-        
-        for x in range(13,17):
-            self.addWall((x,3))        
-          
-        self.addWall((5,4))  
-        
-        for x in range(1,4):
-            self.addWall((x,4))
-            
-        self.addWall((13,4))
-        
-        self.addWall((7,5))
-        self.addWall((8,5))
-        self.addWall((10,5))
-        self.addWall((11,5))
-        self.addWall((15,5))
-        
-        for x in range(0,8):
-            self.addWall((x,6))
-            
-        for x in range(11,16):
-            self.addWall((x,6))            
-            
-        self.addWall((9,7)) 
                     
     def addWall(self, field):
         field = numpy.array(field)
@@ -362,3 +252,116 @@ class Arena(treeSearch.SearchProblem):
             self.rag.addScore(500)
         elif not self.lost:
             self.after(10, self.refresh)
+
+
+class Arena1(Arena):
+    def initArena(self):
+                
+        self.fields = numpy.array([9, 9])
+        self.playerstart = numpy.array([0,0])
+        self.monsterStarts = []
+        self.monsterStarts.append(numpy.array([4,4]))
+        self.monsterStarts.append(numpy.array([4,5]))
+        
+        for i in range(2):
+            self.addMonster(Monster())
+        
+        #AROUND the monster Start
+        for x in range(3,6):
+            y = 3
+            self.addWall((x,y))
+            
+        for y in range(4,6):
+            for x in [3,5]:
+                self.addWall((x,y))
+        
+        #OUTSIDE    
+        for x in range(1,4):
+            for y in [1,7]:
+                self.addWall((x,y))
+            
+        for x in range(5,8):
+            for y in [1,7]:
+                self.addWall((x,y))
+                
+        for y in range(1,4):
+            for x in [1,7]:
+                self.addWall((x,y))
+                
+        for y in range(5,8):
+            for x in [1,7]:
+                self.addWall((x,y))
+                
+        self.coins = []
+        for x in range(0,self.fields[0]):
+            for y in range(0,self.fields[1]):
+                newField = numpy.array([x,y])
+                if not any((newField == x).all() for x in self.walls) and \
+                    not any((newField == x).all() for x in self.monsterStarts):
+                    self.coins.append(Coin((x,y)))
+                
+class Arena2(Arena):
+    def initArena(self):
+                
+        self.fields = numpy.array([17, 8])
+        self.playerstart = numpy.array([0,1])
+        self.monsterStarts = []
+        #self.monsterStarts.append(numpy.array([4,4]))
+        #self.monsterStarts.append(numpy.array([4,5]))
+        
+        #for i in range(2):
+        #    self.addMonster(Monster())
+        
+        
+        self.coins.append(Coin((0,7)))
+        
+        self.addWall((1,0))
+            
+        for y in range(0,2):
+            self.addWall((8,y))
+            
+        for y in range(0,2):
+            self.addWall((8,y))
+            
+        for y in range(0,4):
+            self.addWall((10,y))
+            
+        for x in range(3,7):
+            self.addWall((x,1))
+            
+        for x in range(11,15):
+            self.addWall((x,1))
+
+        for x in range(0,4):
+            self.addWall((x,2))
+            
+        self.addWall((3,3))           
+
+        for x in range(5,9):
+            self.addWall((x,3))
+          
+        self.addWall((11,3)) 
+        
+        for x in range(13,17):
+            self.addWall((x,3))        
+          
+        self.addWall((5,4))  
+        
+        for x in range(1,4):
+            self.addWall((x,4))
+            
+        self.addWall((13,4))
+        
+        self.addWall((7,5))
+        self.addWall((8,5))
+        self.addWall((10,5))
+        self.addWall((11,5))
+        self.addWall((15,5))
+        
+        for x in range(0,8):
+            self.addWall((x,6))
+            
+        for x in range(11,16):
+            self.addWall((x,6))            
+            
+        self.addWall((9,7)) 

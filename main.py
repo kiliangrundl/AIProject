@@ -14,7 +14,10 @@ gernerally the directions are
 import Tkinter
 import Arena
 
-class ArenaCanvas(Arena.Arena, Tkinter.Canvas):
+class ArenaCanvas(Arena.Arena1, Tkinter.Canvas):
+    '''
+    Class that does all the drawing of the arenas
+    '''
 
     def __init__(self, root):
         Arena.Arena.__init__(self)
