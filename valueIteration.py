@@ -1,5 +1,9 @@
 import numpy as np
 
+'''
+This file handles some MDPs
+'''
+
 class RacingProblem():
     '''
     The racing problem as described in the course as a MDP
