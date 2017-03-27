@@ -85,7 +85,7 @@ class RAG(Mover):
         Mover.__init__(self)
         self.score = 0
         
-    def update(self):
+    def valueIteration(self):
         if self.counter > 0:
             self.changeDir()
         
@@ -113,7 +113,7 @@ class Monster(Mover):
         Mover.initialize(self)
         self.direction = numpy.array([1.,0])
         
-    def update(self):        
+    def valueIteration(self):        
         number = rand(1)
         
         prob = 0.1 # probability to change direction
@@ -223,16 +223,16 @@ class Arena(treeSearch.SearchProblem):
         
     def refresh(self):
         """
-        update everything
+        mdpSolver everything
         """
         
         self.rag.addScore(-1)
 
-        self.rag.update()
+        self.rag.valueIteration()
         self.rag.move()
         
         for monster in self.monsters:
-            monster.update()
+            monster.valueIteration()
             monster.move()
         
         for coin in self.coins:
