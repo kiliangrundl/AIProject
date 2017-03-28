@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.ma.core import maximum
 
 class RacingProblem():
     '''
@@ -114,6 +115,7 @@ class MDPSolver():
     def __init__(self, problem):
         self.problem = problem
         self.gamma = 0.90
+        self.convergeLimit = 0.001
         
     def printPolicy(self, p):
         for k in sorted(p.keys()):
@@ -125,9 +127,14 @@ class MDPSolver():
             print(k + ': ' + '%.2f' % (curV[k]), end = ' | ')
         print('')
         
+    def printQValues(self, curQ):
+        for k in sorted(curQ.keys()):
+            print(k + ': ' + '%.2f' % (curQ[k]), end = ' | ')
+        print('')
+        
     def policyExtraction(self, curV):
         p = {}
-        for s in curV.keys():
+        for s in self.problem.getStates():
             actions = self.problem.getActions(s)
             curMax = -float("inf")
             curA = None
@@ -148,13 +155,12 @@ class MDPSolver():
         return p  
 
         
-    def valueUpdate(self, curP, curV):
-        newVS = {}
-        newVS2 = curV
+    def valueUpdateFixedPolicy(self, curP, curV):
         converged = False
         while not converged:
         #for i in range(71):
-            for s in curP.keys():
+            maximum = -float("inf")
+            for s in self.problem.getStates():
                 moves = self.problem.getTransitionFunction(s, curP[s])
                 V = 0
                 for m in moves:
@@ -163,19 +169,16 @@ class MDPSolver():
                     sP = m[2] # new state s'
                     V += T * (R + self.gamma * curV[sP])
                     
-                newVS[s] = V
                 
-            m = -float("inf")
-            for s in newVS.keys():
-                diff = abs(newVS[s] - newVS2[s])
-                m = max(diff, m)
-            if m < 0.0000000001:
-                converged = True
+                diff = abs(V - curV[s])
+                maximum = max(diff, maximum)
                 
-            newVS2 = newVS        
-
+                curV[s] = V        
             
-        return newVS
+            if maximum < self.convergeLimit:
+                converged = True
+            
+        return curV
     
     def policyIteration(self):
         # Initialize policy
@@ -189,7 +192,8 @@ class MDPSolver():
         it = 0
         while not converged:
         #for i in range(71):
-            curV = self.valueUpdate(curP, curV)
+            it += 1
+            curV = self.valueUpdateFixedPolicy(curP, curV)
             newP = self.policyExtraction(curV)
             
             if newP == curP:
@@ -197,7 +201,6 @@ class MDPSolver():
                 
             curP = newP
             
-            it += 1
             
         return curP, curV, it
     
@@ -237,7 +240,7 @@ class MDPSolver():
             for s in newVS.keys():
                 diff = abs(newVS[s] - curV[s])
                 m = max(diff, m)
-            if m < 0.001:
+            if m < self.convergeLimit:
                 converged = True
                 
             curV = newVS
@@ -253,13 +256,5 @@ pol1, V1, it1 = vI.valueIteration()
 pol2, V2, it2 = vI.policyIteration()
 
 vI.printPolicy(pol1)
-print(it1)
 vI.printPolicy(pol2)
-print(it2)
-
-#print(vI.computeQValues('A2', V1))
-#print(vI.computeQValues('A2', V2))
-
-
-
 
