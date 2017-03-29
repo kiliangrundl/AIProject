@@ -2,7 +2,7 @@ import random
 import mdp
            
 
-class MDPSolver():
+class MDPOfflineSolver():
     def __init__(self, problem):
         self.problem = problem
         
@@ -53,7 +53,7 @@ class MDPSolver():
     def computePolicy(self):
         return self.policyExtraction(self.values)
 
-class PolicyIterator(MDPSolver):
+class PolicyIterator(MDPOfflineSolver):
         
     def policyEvaluation(self, curP, curV):
         converged = False
@@ -100,7 +100,7 @@ class PolicyIterator(MDPSolver):
             self.policy = newP
             
 
-class ValueIterator(MDPSolver):
+class ValueIterator(MDPOfflineSolver):
                     
     def valueMaximization(self, values):
         newVS = {}
