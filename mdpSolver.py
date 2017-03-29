@@ -1,138 +1,34 @@
-import numpy as np
-from numpy.ma.core import maximum
-
-class RacingProblem():
-    '''
-    The racing problem as described in the course as a MDP
-    '''
-    def getStates(self):
-        return ['cool', 'warm', 'overheated']
-    
-    def getActions(self, s):
-        if s == 'cool':
-            return ['slow', 'fast']
-        elif s == 'warm':
-            return ['slow', 'fast']
-        else:
-            return []
-        
-    def getTransitionFunction(self, s, a):
-        '''
-        the transition functions from one state to the other
-        returns a list of tuples, containg the (probability, reward, nextState)
-        '''
-        if s == 'cool':
-            if a == 'slow':
-                return [(1, 1, 'cool')]
-            elif a == 'fast':
-                return [(0.5, 2, 'cool'), (0.5, 2, 'warm')]
-            else:
-                raise Exception('FAILURE')
-        elif s =='warm':
-            if a == 'slow':
-                return [(0.5, 1, 'cool'), (0.5, 1, 'warm')]
-            elif a == 'fast':
-                return [(1, -10, 'overheated')]
-            else:
-                raise Exception('FAILURE')
-        else:
-            raise Exception('FAILURE')
-        
-class GirdWorldProblem():
-    '''
-    The GridWorldProblem as a MDP
-    '''
-    
-    def getStates(self):
-        return ['A1', 'A2', 'A3', 'A4', 'B1', 'B3', 'B4', 'C1', 'C2', 'C3', 'C4', 'finish']
-    
-    def getActions(self, s):
-        if s == 'C4' or s == 'B4':
-            return ['exit']
-        else:
-            return ['n', 'e', 's', 'w']
-        
-    def getTransitionFunction(self, s, a):
-        '''
-        the transition functions from one state to the other
-        returns a list of tuples, containg the (probability, reward, nextState)
-        '''
-        lR = 0
-        if s == 'C4':
-            return [(1,1,'finish')]
-        elif s == 'B4':
-            return [(1,-1,'finish')]
-        elif s == 'finish':
-            return [(1,0,'finish')]
-        else:
-            if a == 'n':
-                news = ['X'+s[1], s[0]+str(int(s[1])-1), s[0]+str(int(s[1])+1)]
-                if s[0] == 'A':
-                    news[0] = 'B'+s[1] 
-                elif s[0] == 'B':
-                    news[0] = 'C'+s[1]
-            elif a == 's':    
-                news = ['X'+s[1], s[0]+str(int(s[1])-1), s[0]+str(int(s[1])+1)]
-                if s[0] == 'C':
-                    news[0] = 'B'+s[1] 
-                elif s[0] == 'B':
-                    news[0] = 'A'+s[1]
-            elif a == 'e':
-                news = [s[0]+str(int(s[1])+1), s, s]
-                if s[0] == 'A':
-                    news[1] = 'B'+s[1]
-                    news[2] = 'X'+s[1] 
-                elif s[0] == 'B':
-                    news[1] = 'A'+s[1]
-                    news[2] = 'C'+s[1]
-                elif s[0] == 'C':
-                    news[1] = 'X'+s[1]
-                    news[2] = 'B'+s[1]
-            else: #west
-                news = [s[0]+str(int(s[1])-1), s, s]
-                if s[0] == 'A':
-                    news[1] = 'B'+s[1]
-                    news[2] = 'X'+s[1] 
-                elif s[0] == 'B':
-                    news[1] = 'A'+s[1]
-                    news[2] = 'C'+s[1]
-                elif s[0] == 'C':
-                    news[1] = 'X'+s[1]
-                    news[2] = 'B'+s[1]
-                    
-            # If the new possible state does not exist, replace it with the old state
-            F = news
-            for i in range(len(news)):
-                if news[i] not in self.getStates():
-                    F[i] = s
-            
-            return [(0.8, lR, F[0]), (0.1, lR, F[1]), (0.1, lR, F[2])]
-    
-        
-            
+import random
+import mdp
+           
 
 class MDPSolver():
     def __init__(self, problem):
         self.problem = problem
-        self.gamma = 0.90
-        self.convergeLimit = 0.001
         
-    def printPolicy(self, p):
-        for k in sorted(p.keys()):
-            print(k + ': ' + p[k], end=' | ')
-        print('')
-               
-    def printValues(self, curV):
-        for k in sorted(curV.keys()):
-            print(k + ': ' + '%.2f' % (curV[k]), end = ' | ')
-        print('')
+        self.gamma = 0.90 # discount value
+        self.convergeLimit = 0.001 # limit when the iteration is converged
+        self.it = 0 #iteration steps
         
-    def printQValues(self, curQ):
-        for k in sorted(curQ.keys()):
-            print(k + ': ' + '%.2f' % (curQ[k]), end = ' | ')
-        print('')
         
-    def policyExtraction(self, curV):
+        self.values = {} # dictionary for the values, saved for each state
+        self.policy = {}
+        
+    def computeQValues(self, s, values):
+        Q = {}
+        for a in self.problem.getActions(s):
+            moves = self.problem.getTransitionFunction(s, a)
+            V = 0
+            for m in moves:
+                T = m[0]  # transition function / probability
+                R = m[1]  # reward for this transition
+                sP = m[2]  # new state s'
+                V += T * (R + self.gamma * values[sP])
+            Q[a] = V
+                
+        return Q
+        
+    def policyExtraction(self, values):
         p = {}
         for s in self.problem.getStates():
             actions = self.problem.getActions(s)
@@ -142,10 +38,10 @@ class MDPSolver():
                 moves = self.problem.getTransitionFunction(s, a)
                 V = 0
                 for m in moves:
-                    T = m[0] # transition function / probability
-                    R = m[1] # reward for this transition
-                    sP = m[2] # new state s'
-                    V += T * (R + self.gamma * curV[sP])
+                    T = m[0]  # transition function / probability
+                    R = m[1]  # reward for this transition
+                    sP = m[2]  # new state s'
+                    V += T * (R + self.gamma * values[sP])
                 if V > curMax:
                     curMax = V
                     curA = a
@@ -153,20 +49,24 @@ class MDPSolver():
             p[s] = curA
                 
         return p  
+    
+    def computePolicy(self):
+        return self.policyExtraction(self.values)
 
+class PolicyIterator(MDPSolver):
         
-    def valueUpdateFixedPolicy(self, curP, curV):
+    def policyEvaluation(self, curP, curV):
         converged = False
         while not converged:
-        #for i in range(71):
+        # for i in range(71):
             maximum = -float("inf")
             for s in self.problem.getStates():
                 moves = self.problem.getTransitionFunction(s, curP[s])
                 V = 0
                 for m in moves:
-                    T = m[0] # transition function / probability
-                    R = m[1] # reward for this transition
-                    sP = m[2] # new state s'
+                    T = m[0]  # transition function / probability
+                    R = m[1]  # reward for this transition
+                    sP = m[2]  # new state s'
                     V += T * (R + self.gamma * curV[sP])
                     
                 
@@ -180,81 +80,152 @@ class MDPSolver():
             
         return curV
     
-    def policyIteration(self):
+    def run(self):
         # Initialize policy
-        curP = {}
-        curV = {}
         for s in self.problem.getStates():
-            curP[s] = self.problem.getActions(s)[0] # always take the first action
-            curV[s] = 0
+            self.policy[s] = random.choice(self.problem.getActions(s))  # randomize action taking
+            self.values[s] = 0
             
         converged = False
-        it = 0
+        self.it = 0
         while not converged:
-        #for i in range(71):
-            it += 1
-            curV = self.valueUpdateFixedPolicy(curP, curV)
-            newP = self.policyExtraction(curV)
+        # for i in range(71):
+            self.it += 1
+            self.values = self.policyEvaluation(self.policy, self.values)
+            newP = self.policyExtraction(self.values)
             
-            if newP == curP:
+            if newP == self.policy:
                 converged = True
                 
-            curP = newP
+            self.policy = newP
             
-            
-        return curP, curV, it
-    
-    def computeQValues(self, s, VS):
-        Q = {}
-        for a in self.problem.getActions(s):
-            moves = self.problem.getTransitionFunction(s, a)
-            V = 0
-            for m in moves:
-                T = m[0] # transition function / probability
-                R = m[1] # reward for this transition
-                sP = m[2] # new state s'
-                V += T * (R + self.gamma * VS[sP])
-            Q[a] = V
-                
-        return Q
+
+class ValueIterator(MDPSolver):
                     
-    def valueMaximization(self, VS):
+    def valueMaximization(self, values):
         newVS = {}
-        for s in VS.keys():
-            Q = self.computeQValues(s, VS)
+        for s in self.problem.getStates():
+            Q = self.computeQValues(s, values)
             newVS[s] = max(Q.values())
             
         return newVS
             
-    def valueIteration(self):
+    def run(self):
         converged = False
-        curV = {}
         for s in self.problem.getStates():
-            curV[s] = 0 # initialize everything with zero first
+            self.values[s] = 0  # initialize everything with zero first
         
-        it = 0
+        self.it = 0
         while not converged:
-        #for i in range(71):
-            newVS = self.valueMaximization(curV)
+        # for i in range(71):
+            self.it += 1
+            newVS = self.valueMaximization(self.values)
             m = -float("inf")
             for s in newVS.keys():
-                diff = abs(newVS[s] - curV[s])
+                diff = abs(newVS[s] - self.values[s])
                 m = max(diff, m)
             if m < self.convergeLimit:
                 converged = True
                 
-            curV = newVS
-            #self.printValues(curV)
-            #print('Maximal Difference: ' + str(m))
-            it += 1
-            
-        return self.policyExtraction(curV), curV, it
+            self.values = newVS
+            # self.printValues(curV)
+            # print('Maximal Difference: ' + str(m))
+        self.policy = self.policyExtraction(self.values)
         
+class QLearner():
+    def __init__(self, problem):
+        self.problem = problem
+        
+        # initialize
+        self.gamma = 0.9
+        self.epsilon = 0.8
+        
+        # initialize 
+        self.QValues = {}
+        self.policy = {}
+        self.N = {} # variable for the 'learning' 
+        
+    def getQValue(self, s, a):
+        '''
+        Return the Q-Value of a state-action pair, if it exists
+        '''
+        return self.QValues.get((s, a),0)
+    
+    def getQValues(self, s):
+        '''
+        Return all Q-Values of a state
+        '''
+        Q = {}
+        for a in self.problem.getActions(s):
+            Q[a] = self.QValues.get((s, a),0)
+        return Q
+        
+    def updateN(self, s, a):
+        '''
+        Return the Q-Value of a state-action pair, if it exists
+        '''
+        self.N[(s, a)] = self.N.get((s, a),1) + 1
+    
+    def updatePolicy(self, s):
+        '''
+        Return the maximal Q-Value, i.e. the value, for a state and the necessary action 
+        '''
+        actions = self.problem.getActions(s)
+        vmax = -float("inf")
+        for a in actions:
+            v = self.getQValue(s, a)
+            if  v > vmax:
+                vmax = v
+                amax = a
+                
+        self.policy[s] = amax
             
-vI = MDPSolver(GirdWorldProblem())
-pol1, V1, it1 = vI.valueIteration()
-pol2, V2, it2 = vI.policyIteration()
+        return vmax
+        
+    def updateQ(self, s, a, sP, R):
+        # update policy and get the value for the next state
+        v = self.updatePolicy(sP)
+        self.updateN(s, a)
+        
+        # update QValues
+        alpha = 1 / self.N[s, a]
+        sample = R + self.gamma * v
+        self.QValues[s, a] = (1 - alpha) * self.getQValue(s, a) + alpha * sample
+        
+    def run(self):
+        def choseAction(s):
+            # chose an action depending on probability
+            a = random.choice(self.problem.getActions(s)) 
+            p = self.policy.get(s, a) # returns the value or the default value "a" 
+            return random.choice(int((1 - self.epsilon) * 100) * [p] + int(self.epsilon * 100) * [a])
+        
+        s = random.choice(self.problem.getStartStates())
+        maxI = 5000 
+        for i in range(maxI):
+            if i > maxI / 2:
+                self.epsilon = self.epsilon
+                
+            if self.problem.isGoalState(s):
+                s = random.choice(self.problem.getStartStates())
+            a = choseAction(s)
+            R, sP = self.problem.takeAction(s, a)
+            self.updateQ(s, a, sP, R)
+            
+            # step to next field
+            s = sP
+            
+problem = mdp.GridWorldProblem() # mdp.RacingProblem()
 
-vI.printPolicy(pol1)
-vI.printPolicy(pol2)
+vI = ValueIterator(problem)
+pI = PolicyIterator(problem)
 
+vI.run()
+pI.run()
+
+
+qLearner = QLearner(problem)
+qLearner.run()
+
+mdp.printPolicy(vI.computePolicy())
+mdp.printPolicy(pI.computePolicy())
+mdp.printPolicy(qLearner.policy)
