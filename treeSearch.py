@@ -40,7 +40,7 @@ class SearchProblem:
     def getStartState(self):
         ''' get the start state of a problem '''
         
-    def getPossibleActions(self, s):
+    def getActions(self, pos):
         'Get possible candidates for the current state'
         
     def getGoals(self):
@@ -62,16 +62,16 @@ class SailProblem(SearchProblem):
         SearchProblem.getStartState(self)
         return (4,4)
         
-    def getPossibleActions(self, s):
-        SearchProblem.getPossibleActions(self, s)
+    def getActions(self, pos):
+        SearchProblem.getActions(self, pos)
         actions = []
-        if s[0] < self.xFields:
+        if pos[0] < self.xFields:
             actions.append(Action((1,0),1))
-        if s[0] > 0:
+        if pos[0] > 0:
             actions.append(Action((-1,0),1))
-        if s[1] > 0:
+        if pos[1] > 0:
             actions.append(Action((0,-1),1))
-        if s[1] < self.yFields:
+        if pos[1] < self.yFields:
             actions.append(Action((0,1),1))
         return actions
     
@@ -98,28 +98,28 @@ class MainTestSearch(SearchProblem):
         SearchProblem.getStartState(self)
         return 'S'
     
-    def getPossibleActions(self, s):
-        if s == 'S':
+    def getActions(self, pos):
+        if pos == 'S':
             actions = [Action('d',3), Action('e',9), Action('p',1)]
-        if s == 'a':
+        if pos == 'a':
             actions = []
-        if s == 'b':
+        if pos == 'b':
             actions = [Action('a',2)]
-        if s == 'c':
+        if pos == 'c':
             actions = [Action('a',1)]
-        if s == 'd':
+        if pos == 'd':
             actions = [Action('b',1), Action('c',8), Action('e',2)]
-        if s == 'e':
+        if pos == 'e':
             actions = [Action('h',8), Action('r',2)]
-        if s == 'f':
+        if pos == 'f':
             actions = [Action('c',1), Action('G',2)]
-        if s == 'h':
+        if pos == 'h':
             actions = [Action('p',1), Action('q',1)]
-        if s == 'p':
+        if pos == 'p':
             actions = [Action('q',15)]
-        if s == 'q':
+        if pos == 'q':
             actions = []
-        if s == 'r':
+        if pos == 'r':
             actions = [Action('f',1)]            
         
         return actions
@@ -146,10 +146,10 @@ class EasyTestSearchOne(SearchProblem):
         SearchProblem.getStartState(self)
         return 'S'
     
-    def getPossibleActions(self, s):
-        if s == 'S':
+    def getActions(self, pos):
+        if pos == 'S':
             actions = [Action('A',1), Action('G',5)]
-        if s == 'A':
+        if pos == 'A':
             actions = [Action('G',3)]
         return actions
     
@@ -224,7 +224,7 @@ class SearchStrategy:
     
     def explore(self):
         ''' Explore the problem'''
-        possibleActions = self.problem.getPossibleActions(self.getCurrentState())
+        possibleActions = self.problem.getActions(self.getCurrentState())
         self.updateFringe(possibleActions)
         
 class DepthFirstSearch(SearchStrategy):

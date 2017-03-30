@@ -1,6 +1,5 @@
 import random
-import mdp
-           
+       
 
 class MDPOfflineSolver():
     def __init__(self, problem):
@@ -138,7 +137,7 @@ class QLearner():
         
         # initialize
         self.gamma = 0.9
-        self.epsilon = 0.8
+        self.epsilon = 0
         
         # initialize 
         self.QValues = {}
@@ -150,6 +149,13 @@ class QLearner():
         Return the Q-Value of a state-action pair, if it exists
         '''
         return self.QValues.get((s, a),0)
+    
+    def getValue(self, s):
+        '''
+        compute the value of a state from the Q-Values
+        '''
+        Q = self.getQValues(s)
+        return max(Q.values())
     
     def getQValues(self, s):
         '''
@@ -166,7 +172,7 @@ class QLearner():
         '''
         self.N[(s, a)] = self.N.get((s, a),1) + 1
     
-    def updatePolicy(self, s):
+    def updatePolicyStandard(self, s):
         '''
         Return the maximal Q-Value, i.e. the value, for a state and the necessary action 
         '''
@@ -181,51 +187,56 @@ class QLearner():
         self.policy[s] = amax
             
         return vmax
+    
+    def updatePolicyExplorationFunction(self, s):
+        '''
+        Return the maximal Q-Value, i.e. the value, for a state and the necessary action, but take into account that non visited places get higher values 
+        '''
+        k = 10
+        actions = self.problem.getActions(s)
+        vmax = -float("inf")
+        for a in actions:
+            n = self.N.get((s, a),1)
+            v = self.getQValue(s, a) + k / (n+1)
+            if  v > vmax:
+                vmax = v
+                amax = a
+                
+        self.policy[s] = amax
+            
+        return vmax        
         
+    
     def updateQ(self, s, a, sP, R):
         # update policy and get the value for the next state
-        v = self.updatePolicy(sP)
+        #v = self.updatePolicyStandard(sP)
+        v = self.updatePolicyExplorationFunction(sP)
         self.updateN(s, a)
         
         # update QValues
         alpha = 1 / self.N[s, a]
         sample = R + self.gamma * v
         self.QValues[s, a] = (1 - alpha) * self.getQValue(s, a) + alpha * sample
+
+    def choseAction(self, s):
+        # chose an action depending on probability
+        a = random.choice(self.problem.getActions(s)) 
+        p = self.policy.get(s, a) # returns the value or the default value "a" 
+        return random.choice(int((1 - self.epsilon) * 100) * [p] + int(self.epsilon * 100) * [a])
         
     def run(self):
-        def choseAction(s):
-            # chose an action depending on probability
-            a = random.choice(self.problem.getActions(s)) 
-            p = self.policy.get(s, a) # returns the value or the default value "a" 
-            return random.choice(int((1 - self.epsilon) * 100) * [p] + int(self.epsilon * 100) * [a])
-        
         s = random.choice(self.problem.getStartStates())
-        maxI = 5000 
+        maxI = 1000 
         for i in range(maxI):
             if i > maxI / 2:
                 self.epsilon = self.epsilon
                 
             if self.problem.isGoalState(s):
                 s = random.choice(self.problem.getStartStates())
-            a = choseAction(s)
+            a = self.choseAction(s)
             R, sP = self.problem.takeAction(s, a)
             self.updateQ(s, a, sP, R)
             
             # step to next field
             s = sP
             
-problem = mdp.GridWorldProblem() # mdp.RacingProblem()
-
-vI = ValueIterator(problem)
-pI = PolicyIterator(problem)
-
-vI.run()
-pI.run()
-
-
-qLearner = QLearner(problem)
-qLearner.run()
-
-mdp.printPolicy(vI.computePolicy())
-mdp.printPolicy(pI.computePolicy())
-mdp.printPolicy(qLearner.policy)

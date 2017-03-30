@@ -1,129 +1,142 @@
-"""
-gernerally the directions are
-
-  0 1 2 3 4 5
-  _ _ _ _ _ _ _> x
-0|
-1|
-2|
-3|
-4|
- y 
-"""
-
-import Tkinter
+import tkinter
 import Arena
+import mdpSolver
+import matplotlib.pyplot as plt
 
-class ArenaCanvas(Arena.Arena1, Tkinter.Canvas):
+def initializeCanvas(problem):
     '''
-    Class that does all the drawing of the arenas
+    Routine uch that the arena can be painted or not in a different thread
     '''
-
-    def __init__(self, root):
-        Arena.Arena.__init__(self)
-        Tkinter.Canvas.__init__(self, root)
-        self.fieldsize=50        
-        self.walls = []
-        self.monsters = []
-        self.coins = []
+    paint = True
+    if paint:
         
-    def start(self, *keys):
-        Arena.Arena.start(self, *keys)
-        self.master.after(1000, w.refresh)
-      
+        # TODO: solve this more nicely
+        try:
+            root.bind("<Key>", player.keyInput)
+        except:
+            pass
+        
+        canvas = Arena.ArenaCanvas(root, problem)
+        canvas.pack(fill=tkinter.BOTH, expand=1)
+        root.resizable(width=False, height=False)
+    
+        # create a toplevel menu
+        menubar = tkinter.Menu(root)
+        #menubar.add_command(label="Restart", command=self.start)
+        #root.bind_all("<Control-r>", self.start)
+        # display the menu
+        root.config(menu=menubar)
+    
+        canvas.initialize()
+        root.after(100, canvas.refresh)
+    
+        #tkinter.mainloop()
+
+class Player(Arena.Mover):
+    def __init__(self, problem):
+        Arena.Mover.__init__(self)
+        self.score = 0
+        self.problem = problem
+        
     def initialize(self):
-        Arena.Arena.initialize(self)
-        self.TkObjects = {}
-        
-        # DRAWING
-        self.battlefield = self.create_rectangle(0,0,self.fields[0]*self.fieldsize,self.fields[1] * self.fieldsize,fill='green')
-        
-        for mS in self.monsterStarts:
-            xstart = mS[0] * self.fieldsize
-            ystart = mS[1] * self.fieldsize
-            self.create_rectangle(xstart,ystart,xstart + self.fieldsize,ystart + self.fieldsize,fill='red')
-        
-        for wall in self.walls:
-            xstart = wall[0] * self.fieldsize
-            ystart = wall[1] * self.fieldsize
-            self.create_rectangle(xstart,ystart,xstart + self.fieldsize,ystart + self.fieldsize,fill='gray')
+        Arena.Mover.initialize(self)
+        self.score = 0
 
+    def start(self):
+        self.problem.initialize()
+        initializeCanvas(self.problem)
+        self.play()
+    
+    def play(self):
+        self.problem.initialize()
 
-        for coin in self.coins:
-            x = (coin.getPosition()[0]+0.5)*self.fieldsize
-            y = (coin.getPosition()[1]+0.5)*self.fieldsize
-            r = self.fieldsize*0.1
-            self.TkObjects[coin] = self.create_oval(x-r, y-r, x+r, y+r, fill='yellow')
+        root.after(1000, self.run)
+
+    def getScore(self):
+        return self.score
+    
+    def addScore(self, points):
+        self.score += points
+
+class RAG(Player):
+    
+    def choseAction(self):
+        '''
+        A manual player acts basically all the time...
+        '''
+        return self.action
+        
+        
+    def keyInput(self, event):
+        if event.keysym == 'Right':
+            self.right()
+        if event.keysym == 'Left':
+            self.left()
+        if event.keysym == 'Up':
+            self.up()
+        if event.keysym == 'Down':
+            self.down()   
             
-            
-        x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
-        y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
-        r = self.fieldsize*0.4
-        self.TkObjects[self.rag] = self.create_oval(x-r, y-r, x+r, y+r, fill='blue')
+    def run(self):
+        a = self.choseAction()
+        R, sP = self.problem.takeAction(self.problem.getState(), a)
+        print(R, '/', self.score)
         
-        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 30, 20, text=str(self.rag.getScore()))
-            
-        for monster in self.monsters:           
-            x = (monster.getPosition()[0]+0.5)*self.fieldsize
-            y = (monster.getPosition()[1]+0.5)*self.fieldsize
-            r = self.fieldsize*0.4
-            self.TkObjects[monster] = self.create_oval(x-r, y-r, x+r, y+r, fill='orange')
+        if not self.problem.isGoalState(sP):
+            root.after(700, self.run)
+        else:
+            print(self.score)
+            root.after(1000, self.play)          
+
+class RAGQLearner(mdpSolver.QLearner, Player):
+    def __init__(self, problem):
+        mdpSolver.QLearner.__init__(self, problem)
+        Player.__init__(self, problem)
         
-        self.master.geometry('{}x{}'.format(self.fields[0]*self.fieldsize, self.fields[1] * self.fieldsize))     
+    def start(self):
+        score = []
+        avgScore = []
+        N = 50
+        for i in range(1000):
+            self.problem.initialize()
+            self.run()
+            score.append(self.getScore())
+            if i % N == 0 and i > 0:
+                avgScore.append(sum(score[i-N:i])/N)
+            #    print('Average over the last 100 games: ' + str()
+        #print('Average over the last 100 games: ' + str(sum(score[i-N:i])/N))
+        #for s in self.policy:
+        #    # compute how often this state was visited
+        #    n = 0
+        #    for a in self.problem.getActions(s):
+        #        try:
+        #            n += self.N[(s,a)]
+        #        except:
+        #            n += 0 
+        #    if n != 0:
+        #        print(s, ' ', round(self.getValue(s)), ' ', self.policy[s])
+        plt.plot(avgScore)
+        plt.show()
+    
+    def run(self):
+        s = self.problem.getState()
+        a = self.choseAction(s)
         
-    def refresh(self):
-        Arena.Arena.refresh(self)
-        
-        # Drawing
-        delCoins = set(self.TkObjects.keys()) - set(self.coins + [self.rag] + self.monsters)
-        for coin in delCoins:
-            self.delete(self.TkObjects[coin])
-            del self.TkObjects[coin] 
+        R, sP = self.problem.takeAction(s, a)
+        self.updateQ(s, a, sP, R)
 
-        #DRAWING        
-        x = (self.rag.getPosition()[0]+0.5)*self.fieldsize
-        y = (self.rag.getPosition()[1]+0.5)*self.fieldsize
-        r = self.fieldsize*0.4
-        self.coords(self.TkObjects[self.rag],x-r, y-r, x+r, y+r)
-        
-        for monster in self.monsters:        
-            x = (monster.getPosition()[0]+0.5)*self.fieldsize
-            y = (monster.getPosition()[1]+0.5)*self.fieldsize
-            r = self.fieldsize*0.4
-            self.coords(self.TkObjects[monster],x-r, y-r, x+r, y+r)
-            
-            
-        #Drawing
-        self.delete(self.scorefield)
-        self.scorefield = self.create_text(self.fields[0]*self.fieldsize + 30, 20, text=str(self.rag.getScore()))
-        
-        if self.coins == []:
-            self.create_text(self.fields[0]*self.fieldsize / 2, self.fields[1]*self.fieldsize / 2 , text='You Won, Score = ' + str(self.rag.getScore()), fill='white')
-        elif self.lost:
-            self.create_text(self.fields[0]*self.fieldsize / 2, self.fields[1]*self.fieldsize / 2 , text='You Lost, Score = ' + str(self.rag.getScore()), fill='white')
+        if not self.problem.isGoalState(s):
+            self.run()
 
-root = Tkinter.Tk()
+# define the problem
+arena = Arena.SimpleArena1()
 
-w = ArenaCanvas(root)
-rag = Arena.RAG()
-w.addPlayer(rag)
-  
+# Define a player
+player = RAGQLearner(arena)
+arena.addPlayer(player)
 
-root.bind("<Key>", rag.keyInput)
-
-w.pack(fill=Tkinter.BOTH, expand=1)
-root.resizable(width=False, height=False)
-
-# create a toplevel menu
-menubar = Tkinter.Menu(root)
-menubar.add_command(label="Restart", command=w.start)
-root.bind_all("<Control-r>", w.start)
-# display the menu
-root.config(menu=menubar)
-
-root.after(10, w.start)
-
-Tkinter.mainloop()    
+root = tkinter.Tk()
+root.after(0, player.start)
+tkinter.mainloop()
 
 
-      
