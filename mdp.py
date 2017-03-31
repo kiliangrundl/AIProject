@@ -43,7 +43,7 @@ class RacingProblem(MDP):
     def getStates(self):
         return ['cool', 'warm', 'overheated']
     
-    def getActions(self, pos):
+    def getStateActions(self, pos):
         if pos == 'cool':
             return ['slow', 'fast']
         elif pos == 'warm':
@@ -87,7 +87,7 @@ class GridWorldProblem(MDP):
     def getStates(self):
         return ['A1', 'A2', 'A3', 'A4', 'B1', 'B3', 'B4', 'C1', 'C2', 'C3', 'C4', 'finish']
     
-    def getActions(self, pos):
+    def getStateActions(self, pos):
         if pos == 'C4' or pos == 'B4':
             return ['exit']
         else:

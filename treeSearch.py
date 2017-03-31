@@ -37,10 +37,10 @@ class SearchProblem:
 
     """
         
-    def getStartState(self):
+    def getSearchStartState(self):
         ''' get the start state of a problem '''
         
-    def getActions(self, pos):
+    def getSearchActions(self, pos):
         'Get possible candidates for the current state'
         
     def getGoals(self):
@@ -49,7 +49,7 @@ class SearchProblem:
     def getNewPosition(self, s, action):
         'Return the new position'
     
-    def solved(self, s):
+    def solvedSearch(self, s):
         ''' Check if the solution to the problem is found '''
 
 class SailProblem(SearchProblem):
@@ -58,21 +58,21 @@ class SailProblem(SearchProblem):
         self.xFields = xFields
         self.yFields = yFields
         
-    def getStartState(self):
-        SearchProblem.getStartState(self)
-        return (4,4)
+    def getSearchStartState(self):
+        SearchProblem.getSearchStartState(self)
+        return (4, 4)
         
-    def getActions(self, pos):
-        SearchProblem.getActions(self, pos)
+    def getSearchActions(self, pos):
+        SearchProblem.getSearchActions(self, pos)
         actions = []
         if pos[0] < self.xFields:
-            actions.append(Action((1,0),1))
+            actions.append(Action((1, 0), 1))
         if pos[0] > 0:
-            actions.append(Action((-1,0),1))
+            actions.append(Action((-1, 0), 1))
         if pos[1] > 0:
-            actions.append(Action((0,-1),1))
+            actions.append(Action((0, -1), 1))
         if pos[1] < self.yFields:
-            actions.append(Action((0,1),1))
+            actions.append(Action((0, 1), 1))
         return actions
     
     def getGoals(self):
@@ -80,10 +80,10 @@ class SailProblem(SearchProblem):
         return self.g
     
     def getNewPosition(self, s, action):
-        return (s[0]+action.getMove()[0],s[1]+action.getMove()[1]) 
+        return (s[0] + action.getMove()[0], s[1] + action.getMove()[1]) 
         
-    def solved(self, s):
-        SearchProblem.solved(self, s)
+    def solvedSearch(self, s):
+        SearchProblem.solvedSearch(self, s)
         if s in self.g:
             return True
         else:
@@ -94,33 +94,33 @@ class MainTestSearch(SearchProblem):
     This is the graph that always appears in the lecture
     """
     
-    def getStartState(self):
-        SearchProblem.getStartState(self)
+    def getSearchStartState(self):
+        SearchProblem.getSearchStartState(self)
         return 'S'
     
-    def getActions(self, pos):
+    def getSearchActions(self, pos):
         if pos == 'S':
-            actions = [Action('d',3), Action('e',9), Action('p',1)]
+            actions = [Action('d', 3), Action('e', 9), Action('p', 1)]
         if pos == 'a':
             actions = []
         if pos == 'b':
-            actions = [Action('a',2)]
+            actions = [Action('a', 2)]
         if pos == 'c':
-            actions = [Action('a',1)]
+            actions = [Action('a', 1)]
         if pos == 'd':
-            actions = [Action('b',1), Action('c',8), Action('e',2)]
+            actions = [Action('b', 1), Action('c', 8), Action('e', 2)]
         if pos == 'e':
-            actions = [Action('h',8), Action('r',2)]
+            actions = [Action('h', 8), Action('r', 2)]
         if pos == 'f':
-            actions = [Action('c',1), Action('G',2)]
+            actions = [Action('c', 1), Action('G', 2)]
         if pos == 'h':
-            actions = [Action('p',1), Action('q',1)]
+            actions = [Action('p', 1), Action('q', 1)]
         if pos == 'p':
-            actions = [Action('q',15)]
+            actions = [Action('q', 15)]
         if pos == 'q':
             actions = []
         if pos == 'r':
-            actions = [Action('f',1)]            
+            actions = [Action('f', 1)]            
         
         return actions
     
@@ -131,7 +131,7 @@ class MainTestSearch(SearchProblem):
     def getNewPosition(self, s, action):
         return action.getMove()
         
-    def solved(self, s):
+    def solvedSearch(self, s):
         if s == 'G':
             return True
         else:
@@ -142,15 +142,15 @@ class EasyTestSearchOne(SearchProblem):
     This is the graph appears in between
     """
     
-    def getStartState(self):
-        SearchProblem.getStartState(self)
+    def getSearchStartState(self):
+        SearchProblem.getSearchStartState(self)
         return 'S'
     
-    def getActions(self, pos):
+    def getSearchActions(self, pos):
         if pos == 'S':
-            actions = [Action('A',1), Action('G',5)]
+            actions = [Action('A', 1), Action('G', 5)]
         if pos == 'A':
-            actions = [Action('G',3)]
+            actions = [Action('G', 3)]
         return actions
     
     def getGoals(self):
@@ -160,7 +160,7 @@ class EasyTestSearchOne(SearchProblem):
     def getNewPosition(self, s, action):
         return action.getMove()
         
-    def solved(self, s):
+    def solvedSearch(self, s):
         if s == 'G':
             return True
         else:
@@ -199,7 +199,7 @@ class SearchStrategy:
         self.problem = problem
 
         self.fringe = set()
-        self.currentFringe = FringeMember([problem.getStartState()], 0)
+        self.currentFringe = FringeMember([problem.getSearchStartState()], 0)
         self.fringe.add(self.currentFringe)
         
     def updateCurrentFringemember(self):
@@ -216,7 +216,7 @@ class SearchStrategy:
         for action in actions:
             newPos = self.problem.getNewPosition(self.getCurrentState(), action)
             if newPos not in self.currentFringe.getPath():
-                self.fringe.add(FringeMember(self.currentFringe.getPath()+[newPos], self.currentFringe.getCostTotal()+action.getCost()))
+                self.fringe.add(FringeMember(self.currentFringe.getPath() + [newPos], self.currentFringe.getCostTotal() + action.getCost()))
                 
         self.fringe.remove(self.currentFringe)
         if self.fringe:
@@ -224,8 +224,8 @@ class SearchStrategy:
     
     def explore(self):
         ''' Explore the problem'''
-        possibleActions = self.problem.getActions(self.getCurrentState())
-        self.updateFringe(possibleActions)
+        numberOfActions = self.problem.getSearchActions(self.getCurrentState())
+        self.updateFringe(numberOfActions)
         
 class DepthFirstSearch(SearchStrategy):
         
@@ -252,7 +252,7 @@ class manhattenDistance2D():
         pos = fringe.getPath()[-1]
         
         def distMeas(y):
-            return abs(y[0]-pos[0])+abs(y[1]-pos[1])
+            return abs(y[0] - pos[0]) + abs(y[1] - pos[1])
         
         return distMeas(min(self.goals, key=distMeas))
       
@@ -272,34 +272,33 @@ class AstarSearch(SearchStrategy):
         self.heuristic = heuristic
         
     def updateCurrentFringemember(self):
-        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, self.problem)+x.getCostTotal())
+        self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, self.problem) + x.getCostTotal())
 
 def treeSearch(problem, strategy):
     ':type problem: SearchProblem'
     ':type strategy: SearchStrategy'
    
-    start = time.time()
+    # start = time.time()
     found = False
-    #problem.initialize()
+    # problem.initialize()
     while True:
         'If there are no new candidate the search has failed'
         if strategy.getCurrentFringe() is None:
             break
         
-        if problem.solved(strategy.getCurrentState()):
-            'If the problem is solved we are happy'
+        if problem.solvedSearch(strategy.getCurrentState()):
+            'If the problem is solvedSearch we are happy'
             found = True
             break
         else:
-            'If the problem is not solved, we have to explore with the canidate'
+            'If the problem is not solvedSearch, we have to explore with the canidate'
             strategy.explore()
             
-    if found:
-        print('Solution: with costTotal ' + str(strategy.getCurrentFringe().getCostTotal()) + ' and path: ' + str(strategy.getCurrentFringe().getPath()))
-    else:
-        print('No Solution found')
-    end = time.time()
-    print(end - start)
-    return found
+    # if found:
+    #    print('Solution: with costTotal ' + str(strategy.getCurrentFringe().getCostTotal()) + ' and path: ' + str(strategy.getCurrentFringe().getPath()))
+    # else:
+    #    print('No Solution found')
+    # end = time.time()
+    # print(end - start)
             
 

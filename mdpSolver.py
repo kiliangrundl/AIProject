@@ -5,17 +5,17 @@ class MDPOfflineSolver():
     def __init__(self, problem):
         self.problem = problem
         
-        self.gamma = 0.90 # discount value
-        self.convergeLimit = 0.001 # limit when the iteration is converged
-        self.it = 0 #iteration steps
+        self.gamma = 0.90  # discount value
+        self.convergeLimit = 0.001  # limit when the iteration is converged
+        self.it = 0  # iteration steps
         
         
-        self.values = {} # dictionary for the values, saved for each state
+        self.values = {}  # dictionary for the values, saved for each state
         self.policy = {}
         
     def computeQValues(self, s, values):
         Q = {}
-        for a in self.problem.getActions(s):
+        for a in self.problem.getStateActions(s):
             moves = self.problem.getTransitionFunction(s, a)
             V = 0
             for m in moves:
@@ -30,7 +30,7 @@ class MDPOfflineSolver():
     def policyExtraction(self, values):
         p = {}
         for s in self.problem.getStates():
-            actions = self.problem.getActions(s)
+            actions = self.problem.getStateActions(s)
             curMax = -float("inf")
             curA = None
             for a in actions:
@@ -82,7 +82,7 @@ class PolicyIterator(MDPOfflineSolver):
     def run(self):
         # Initialize policy
         for s in self.problem.getStates():
-            self.policy[s] = random.choice(self.problem.getActions(s))  # randomize action taking
+            self.policy[s] = random.choice(self.problem.getStateActions(s))  # randomize action taking
             self.values[s] = 0
             
         converged = False
@@ -142,41 +142,41 @@ class QLearner():
         # initialize 
         self.QValues = {}
         self.policy = {}
-        self.N = {} # variable for the 'learning' 
+        self.N = {}  # variable for the 'learning' 
         
     def getQValue(self, s, a):
         '''
         Return the Q-Value of a state-action pair, if it exists
         '''
-        return self.QValues.get((s, a),0)
+        return self.QValues.get((s, a), 0)
     
-    def getValue(self, s):
+    def computeValue(self, s):
         '''
         compute the value of a state from the Q-Values
         '''
-        Q = self.getQValues(s)
+        Q = self.computeQValues(s)
         return max(Q.values())
     
-    def getQValues(self, s):
+    def computeQValues(self, s):
         '''
         Return all Q-Values of a state
         '''
         Q = {}
-        for a in self.problem.getActions(s):
-            Q[a] = self.QValues.get((s, a),0)
+        for a in self.problem.getStateActions(s):
+            Q[a] = self.QValues.get((s, a), 0)
         return Q
         
     def updateN(self, s, a):
         '''
         Return the Q-Value of a state-action pair, if it exists
         '''
-        self.N[(s, a)] = self.N.get((s, a),1) + 1
+        self.N[(s, a)] = self.N.get((s, a), 1) + 1
     
     def updatePolicyStandard(self, s):
         '''
         Return the maximal Q-Value, i.e. the value, for a state and the necessary action 
         '''
-        actions = self.problem.getActions(s)
+        actions = self.problem.getStateActions(s)
         vmax = -float("inf")
         for a in actions:
             v = self.getQValue(s, a)
@@ -193,11 +193,11 @@ class QLearner():
         Return the maximal Q-Value, i.e. the value, for a state and the necessary action, but take into account that non visited places get higher values 
         '''
         k = 10
-        actions = self.problem.getActions(s)
+        actions = self.problem.getStateActions(s)
         vmax = -float("inf")
         for a in actions:
-            n = self.N.get((s, a),1)
-            v = self.getQValue(s, a) + k / (n+1)
+            n = self.N.get((s, a), 1)
+            v = self.getQValue(s, a) + k / (n + 1)
             if  v > vmax:
                 vmax = v
                 amax = a
@@ -209,7 +209,7 @@ class QLearner():
     
     def updateQ(self, s, a, sP, R):
         # update policy and get the value for the next state
-        #v = self.updatePolicyStandard(sP)
+        # v = self.updatePolicyStandard(sP)
         v = self.updatePolicyExplorationFunction(sP)
         self.updateN(s, a)
         
@@ -220,8 +220,8 @@ class QLearner():
 
     def choseAction(self, s):
         # chose an action depending on probability
-        a = random.choice(self.problem.getActions(s)) 
-        p = self.policy.get(s, a) # returns the value or the default value "a" 
+        a = random.choice(self.problem.getStateActions(s)) 
+        p = self.policy.get(s, a)  # returns the value or the default value "a" 
         return random.choice(int((1 - self.epsilon) * 100) * [p] + int(self.epsilon * 100) * [a])
         
     def run(self):
@@ -239,4 +239,101 @@ class QLearner():
             
             # step to next field
             s = sP
+
+class PropertyFunction():
+    '''
+    mother for property function
+    '''
+    def __init__(self, problem):
+        self.weight = 1
+        self.problem = problem # get access to the problem (easier than direct state evaluation)
+        
+    def evaluate(self, s, a):
+        return 0
+
+class QApproximator():
+    def __init__(self, problem):
+        self.problem = problem
+        
+        self.properties = []
+        
+        # initialize
+        self.gamma = 0.9
+        self.epsilon = 0
+        self.N = 0
+        
+    def addPropertyFunction(self, prop):
+        self.properties.append(prop)
+        
+    def computeQValue(self, s, a):
+        '''
+        Return the Q-Value of a state-action pair, if it exists
+        '''
+        Q = 0
+        if self.problem.isGoalState(s):
+            return Q
+        for prop in self.properties:
+            Q += prop.evaluate(s,a) * prop.weight
             
+        return Q
+
+    def computeQValues(self, s):
+        '''
+        Return all Q-Values of a state
+        '''
+        Q = {}
+        for a in self.problem.getStateActions(s):
+            Q[a] = self.computeQValue(s, a)
+        return Q
+    
+    def computeValue(self, s):
+        '''
+        compute the value of a state from the Q-Values
+        '''
+        return max(self.computeQValues(s).values())
+    
+        
+    def computePolicy(self, s):
+        '''
+        Return the maximal Q-Value, i.e. the value, for a state and the necessary action 
+        '''
+        Qs = self.computeQValues(s)
+        vmax = max(Qs.values())
+        amax = list(Qs.keys())[list(Qs.values()).index(vmax)]
+                
+        return amax
+    
+    def updateQ(self, s, a, sP, R):
+        # update policy and get the value for the next state
+        Qcur = self.computeQValue(s, a)
+        v = self.computeValue(sP)
+        difference = R + self.gamma * v - Qcur
+        
+        # update QValues
+        self.N += 1
+        alpha = 0.05 # 1 / self.N
+        for prop in self.properties:
+            prop.weight += alpha * difference * prop.evaluate(s, a)
+
+    def choseAction(self, s):
+        # chose an action depending on probability
+        #a = random.choice(self.problem.getStateActions(s)) 
+        #p = self.computePolicy(s)  # returns the value or the default value "a" 
+        #return random.choice(int((1 - self.epsilon) * 100) * [p] + int(self.epsilon * 100) * [a])
+        return self.computePolicy(s)
+        
+    def run(self):
+        s = random.choice(self.problem.getStartStates())
+        maxI = 1000 
+        for i in range(maxI):
+            if i > maxI / 2:
+                self.epsilon = self.epsilon
+                
+            if self.problem.isGoalState(s):
+                s = random.choice(self.problem.getStartStates())
+            a = self.choseAction(s)
+            R, sP = self.problem.takeAction(s, a)
+            self.updateQ(s, a, sP, R)
+            
+            # step to next field
+            s = sP              

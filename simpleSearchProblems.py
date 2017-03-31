@@ -1,17 +1,19 @@
 import treeSearch as tS
-from Arena import Arena
+import Arena
 
         
-problem = tS.SailProblem([(14,18)], 20, 20)
+problem = tS.SailProblem([(7,3)], 8, 8)
 #problem = tS.MainTestSearch()
 #problem = tS.EasyTestSearchOne()
 
-problem = Arena()
-problem.initArena2()
+problem = Arena.Arena1()
+g = [(4.0,4.0), (7.0,0.0)]
+problem.setSearchGoals(g)
+problem.setSearchStartState((0.0,1.0))
 
 # Set heuristic
-hC = tS.manhattenDistance2D([(14,18)])
-hC = tS.manhattenDistance2D([(0,7)]) # for Arena2
+hC = tS.manhattenDistance2D([(7,3)])
+hC = tS.manhattenDistance2D(g) # for Arena2
 heuristic = hC.heuristicFun
 
    
@@ -25,7 +27,12 @@ print("UniformCostSearch")
 #treeSearch(problem, tS.UniformCostSearch(problem, s))
 
 print("GreedySearch")
-tS.treeSearch(problem, tS.GreedySearch(problem, heuristic))
+#strategy = tS.GreedySearch(problem, heuristic)
+#tS.treeSearch(problem, strategy)
+#print('costs: ', strategy.currentFringe.getCostTotal())
 
 print("AstarSearch")
-tS.treeSearch(problem, tS.AstarSearch(problem, heuristic))
+strategy = tS.AstarSearch(problem, heuristic)
+tS.treeSearch(problem, strategy)
+print('costs: ', strategy.currentFringe.getCostTotal())
+print('path: ', strategy.currentFringe.getPath())
