@@ -105,19 +105,19 @@ class GreedySearchTest(unittest.TestCase):
         treeSearch.treeSearch(problem, strategy)
         self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
         
-class GreedySearchTest(unittest.TestCase):
+class AStarSearchTest(unittest.TestCase):
      
     def testSearchSailProblem(self):
         result = [(4, 4), (5, 4), (6, 4), (7, 4), (7, 3)]
 
         problem = treeSearch.SailProblem([(7,3)], 8, 8)
         hC = treeSearch.manhattenDistance2D([(7,3)])
-        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        strategy = treeSearch.AstarSearch(problem, hC.heuristicFun)
         treeSearch.treeSearch(problem, strategy)
         self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
         
     def testArena1(self):
-        result = [(0.0, 1.0), (0.0, 2.0), (0.0, 3.0), (0.0, 4.0), (1.0, 4.0), (2.0, 4.0), (2.0, 3.0), (2.0, 2.0), (3.0, 2.0), (4.0, 2.0), (4.0, 1.0), (4.0, 0.0), (5.0, 0.0), (6.0, 0.0), (7.0, 0.0)]
+        result = [(0.0, 1.0), (0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (3.0, 0.0), (4.0, 0.0), (5.0, 0.0), (6.0, 0.0), (7.0, 0.0)]
 
         problem = Arena.Arena1()
         problem.setSearchStartState((0.0,1.0))
@@ -125,9 +125,11 @@ class GreedySearchTest(unittest.TestCase):
         problem.setSearchGoals(g)
             
         hC = treeSearch.manhattenDistance2D(g)
-        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        strategy = treeSearch.AstarSearch(problem, hC.heuristicFun)
         treeSearch.treeSearch(problem, strategy)
         self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
+        
+    
         
 def main():
     unittest.main()
