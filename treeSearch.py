@@ -1,5 +1,3 @@
-import time
-
 class Action():
     """
     Class to describe actions, consisting of a move and a costTotal
@@ -198,9 +196,9 @@ class SearchStrategy:
         ':type problem: SearchProblem'
         self.problem = problem
 
-        self.fringe = set()
+        self.fringe = []
         self.currentFringe = FringeMember([problem.getSearchStartState()], 0)
-        self.fringe.add(self.currentFringe)
+        self.fringe.append(self.currentFringe)
         
     def updateCurrentFringemember(self):
         'return the current path'
@@ -216,7 +214,7 @@ class SearchStrategy:
         for action in actions:
             newPos = self.problem.getNewPosition(self.getCurrentState(), action.getMove())
             if newPos not in self.currentFringe.getPath():
-                self.fringe.add(FringeMember(self.currentFringe.getPath() + [newPos], self.currentFringe.getCostTotal() + action.getCost()))
+                self.fringe.append(FringeMember(self.currentFringe.getPath() + [newPos], self.currentFringe.getCostTotal() + action.getCost()))
                 
         self.fringe.remove(self.currentFringe)
         if self.fringe:
