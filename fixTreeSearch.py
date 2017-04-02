@@ -1,5 +1,6 @@
 import unittest
 import treeSearch
+import Arena
 
 class DepthFirstSearchTests(unittest.TestCase):
 
@@ -78,6 +79,55 @@ class UniformCostSearchTest(unittest.TestCase):
         strategy = treeSearch.UniformCostSearch(problem)
         treeSearch.treeSearch(problem, strategy)
         self.assertTrue(strategy.getCurrentFringe().getPath() == result)    
+
+        
+class GreedySearchTest(unittest.TestCase):
+     
+    def testSearchSailProblem(self):
+        result = [(4, 4), (5, 4), (6, 4), (7, 4), (7, 3)]
+
+        problem = treeSearch.SailProblem([(7,3)], 8, 8)
+        hC = treeSearch.manhattenDistance2D([(7,3)])
+        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        treeSearch.treeSearch(problem, strategy)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
+        
+    def testArena1(self):
+        result = [(0.0, 1.0), (0.0, 2.0), (0.0, 3.0), (0.0, 4.0), (1.0, 4.0), (2.0, 4.0), (2.0, 3.0), (2.0, 2.0), (3.0, 2.0), (4.0, 2.0), (4.0, 1.0), (4.0, 0.0), (5.0, 0.0), (6.0, 0.0), (7.0, 0.0)]
+
+        problem = Arena.Arena1()
+        problem.setSearchStartState((0.0,1.0))
+        g = [(4.0,4.0), (7.0,0.0)]
+        problem.setSearchGoals(g)
+            
+        hC = treeSearch.manhattenDistance2D(g)
+        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        treeSearch.treeSearch(problem, strategy)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
+        
+class GreedySearchTest(unittest.TestCase):
+     
+    def testSearchSailProblem(self):
+        result = [(4, 4), (5, 4), (6, 4), (7, 4), (7, 3)]
+
+        problem = treeSearch.SailProblem([(7,3)], 8, 8)
+        hC = treeSearch.manhattenDistance2D([(7,3)])
+        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        treeSearch.treeSearch(problem, strategy)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
+        
+    def testArena1(self):
+        result = [(0.0, 1.0), (0.0, 2.0), (0.0, 3.0), (0.0, 4.0), (1.0, 4.0), (2.0, 4.0), (2.0, 3.0), (2.0, 2.0), (3.0, 2.0), (4.0, 2.0), (4.0, 1.0), (4.0, 0.0), (5.0, 0.0), (6.0, 0.0), (7.0, 0.0)]
+
+        problem = Arena.Arena1()
+        problem.setSearchStartState((0.0,1.0))
+        g = [(4.0,4.0), (7.0,0.0)]
+        problem.setSearchGoals(g)
+            
+        hC = treeSearch.manhattenDistance2D(g)
+        strategy = treeSearch.GreedySearch(problem, hC.heuristicFun)
+        treeSearch.treeSearch(problem, strategy)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)  
         
 def main():
     unittest.main()
