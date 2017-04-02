@@ -1,6 +1,5 @@
 import Arena
 import mdpSolver
-import matplotlib.pyplot as plt
 
 '''
 The players that exist

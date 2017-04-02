@@ -1,5 +1,3 @@
-import numpy
-from numpy.matlib import rand
 import random
 import tkinter
 
@@ -26,7 +24,6 @@ class Mover(Fieldobject):
         Fieldobject.__init__(self)
 
     def initialize(self):
-        self.action = numpy.array([0, 0], dtype=int)
         self.action = 's'
     
     def up(self):
@@ -59,19 +56,10 @@ class Monster(Mover):
         
     def initialize(self):
         Mover.initialize(self)
-        self.action = numpy.array([1., 0], dtype=int)
         
     def act(self):        
         # chose a new action
-        number = rand(1)
-        if number < 0.25:
-            self.up()
-        elif number < 0.5:
-            self.down()
-        elif number < 0.75:
-            self.left()
-        else:
-            self.right()
+        self.action = random.choice(['u', 'l', 'd', 'r'])
             
 class Coin(Fieldobject):
     
@@ -260,10 +248,10 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
         self.coins = []
         for x in range(0, self.fields[0]):
             for y in range(0, self.fields[1]):
-                newField = numpy.array([x, y], dtype=int)
-                if not any((newField == x).all() for x in self.walls) and \
-                    not any((newField == x).all() for x in self.monsterStarts) and \
-                    not any((newField == x).all() for x in self.playerstart):
+                newField = (x, y)
+                if not newField in self.walls and \
+                    not newField in self.monsterStarts and \
+                    not newField  in self.playerstart:
                     self.coins.append(Coin((x, y)))
 
     def takeAction(self, s, a):
@@ -370,7 +358,6 @@ class Arena2(Arena):
         self.playerstart = (0, 0)
         self.monsterStarts = []
         self.monsterStarts.append((10,2))
-        #self.monsterStarts.append(numpy.array([2,11]))
         
         for _ in range(3):
             self.addMonster(Monster())
