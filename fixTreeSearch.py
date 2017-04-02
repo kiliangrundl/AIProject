@@ -9,7 +9,7 @@ class DepthFirstSearchTests(unittest.TestCase):
         problem = treeSearch.MainTestSearch()
         strategy = treeSearch.DepthFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)
         
     def testEasyTestSearchOne(self):
         result = ['S', 'A', 'G']
@@ -17,7 +17,7 @@ class DepthFirstSearchTests(unittest.TestCase):
         problem = treeSearch.EasyTestSearchOne()
         strategy = treeSearch.DepthFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)        
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)        
 
     def testSearchSailProblem(self):
         result = [(4, 4), (5, 4), (6, 4), (7, 4), (8, 4), (8, 3), (7, 3)]
@@ -25,7 +25,7 @@ class DepthFirstSearchTests(unittest.TestCase):
         problem = treeSearch.SailProblem([(7,3)], 8, 8)
         strategy = treeSearch.DepthFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)
         
 class BreathFirstSearchTests(unittest.TestCase):
 
@@ -35,7 +35,7 @@ class BreathFirstSearchTests(unittest.TestCase):
         problem = treeSearch.MainTestSearch()
         strategy = treeSearch.BreathFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)
         
     def testEasyTestSearchOne(self):
         result = ['S', 'G']
@@ -43,7 +43,7 @@ class BreathFirstSearchTests(unittest.TestCase):
         problem = treeSearch.EasyTestSearchOne()
         strategy = treeSearch.BreathFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)        
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)        
 
     def testSearchSailProblem(self):
         result = [(4, 4), (5, 4), (6, 4), (7, 4), (7, 3)]
@@ -51,7 +51,7 @@ class BreathFirstSearchTests(unittest.TestCase):
         problem = treeSearch.SailProblem([(7,3)], 8, 8)
         strategy = treeSearch.BreathFirstSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result) 
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result) 
         
 class UniformCostSearchTest(unittest.TestCase):
 
@@ -61,7 +61,7 @@ class UniformCostSearchTest(unittest.TestCase):
         problem = treeSearch.MainTestSearch()
         strategy = treeSearch.UniformCostSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)
         
     def testEasyTestSearchOne(self):
         result = ['S', 'A', 'G']
@@ -69,8 +69,7 @@ class UniformCostSearchTest(unittest.TestCase):
         problem = treeSearch.EasyTestSearchOne()
         strategy = treeSearch.UniformCostSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        print(strategy.getCurrentFringe().getPath())
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)        
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)        
 
     def testSearchSailProblem(self):
         result = [(4, 4), (5, 4), (6, 4), (7, 4), (7, 3)]
@@ -78,7 +77,7 @@ class UniformCostSearchTest(unittest.TestCase):
         problem = treeSearch.SailProblem([(7,3)], 8, 8)
         strategy = treeSearch.UniformCostSearch(problem)
         treeSearch.treeSearch(problem, strategy)
-        self.failUnless(strategy.getCurrentFringe().getPath() == result)    
+        self.assertTrue(strategy.getCurrentFringe().getPath() == result)    
         
 def main():
     unittest.main()
