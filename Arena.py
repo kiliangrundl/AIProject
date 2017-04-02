@@ -12,7 +12,7 @@ class Fieldobject(object):
         object.__init__(self)        
     
     def setPosition(self, position):
-        self.position = numpy.array([float(position[0]), float(position[1])])
+        self.position = position
     
     def getPosition(self):
         return self.position
@@ -26,7 +26,7 @@ class Mover(Fieldobject):
         Fieldobject.__init__(self)
 
     def initialize(self):
-        self.direction = numpy.array([0, 0])
+        self.action = numpy.array([0, 0], dtype=int)
         self.action = 's'
     
     def up(self):
@@ -59,10 +59,10 @@ class Monster(Mover):
         
     def initialize(self):
         Mover.initialize(self)
-        self.direction = numpy.array([1., 0])
+        self.action = numpy.array([1., 0], dtype=int)
         
     def act(self):        
-        # chose a new direction
+        # chose a new action
         number = rand(1)
         if number < 0.25:
             self.up()
@@ -95,10 +95,9 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
     """
 
     def __init__(self):
-        self.walls = []
-        self.monsters = []
-        self.coins = []
-        self.speed = 1
+        self.walls = set()
+        self.monsters = set()
+        self.coins = set()
         
         self.initArena()
         self.addCoins()
@@ -112,14 +111,14 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
     
     def getState(self):
         s = []
-        s.append(tuple(self.player.getPosition()))
+        s.append(self.player.getPosition())
         for coin in self.coins:
             e = 'e'
             if not coin.exists:
                 e = 'n'
-            s.append((tuple(coin.getPosition()), e))
+            s.append((coin.getPosition(), e))
         for monster in self.monsters:
-            s.append(tuple(monster.getPosition()))
+            s.append(monster.getPosition())
             
         return tuple(s)
     
@@ -136,24 +135,36 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
     def getStateActions(self, s):
         actions = ['u', 'd', 'l', 'r']
         possible = []
-        pos = numpy.array(s[0])
+        pos = s[0]
         for a in actions:
-            if self.isValid(pos, self.computeDirection(a)):
+            if self.isValid(self.getNewPosition(pos, a)):
                 possible.append(a)
         
         return possible
+    
+    def computeLinkPositions(self):
+        '''
+        compute all positions which are a link (3 choices or more)
+        '''
+        lP = []
+        for x in range(self.fields[0]):
+            for y in range(self.fields[1]):
+                pos = [(x,y)]
+                if len(self.getStateActions(pos)) > 2 and not pos[0] in self.walls:
+                    lP.append(pos[0])
+        return lP
 
     def computeDirection(self, a):
         if a is 'u':
-            return numpy.array([0, -1])
+            return (0, -1)
         elif a is 'd':
-            return numpy.array([0, 1])
+            return (0, 1)
         elif a is 'l':
-            return numpy.array([-1, 0])
+            return (-1, 0)
         elif a is 'r':
-            return numpy.array([1, 0])
+            return (1, 0)
         else:
-            return numpy.array([0, 0]) 
+            return (0, 0) 
     
     def computeActualDistance(self, p1, goals):
         '''
@@ -170,7 +181,8 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
         return strategy.getCurrentFringe().getCostTotal()
        
     def getNewPosition(self, s, action):
-        return tuple(numpy.array(s) + numpy.array(self.computeDirection(action.getMove())))
+        nD = self.computeDirection(action)
+        return (s[0] + nD[0], s[1] + nD[1])
     
     def setSearchGoals(self, g):
         '''
@@ -204,39 +216,29 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
             return False
             
     def addWall(self, field):
-        field = numpy.array(field)
-        if not any((field == x).all() for x in self.walls):
-            self.walls.append(field)
+        field = field
+        if not field in self.walls:
+            self.walls.add(field)
         
-    def getField(self, position):
-        return position.round()
-        
-    def isValid(self, position, direction):
-        field = self.getField(position)
-        nrm = numpy.linalg.norm(direction)
-        if nrm > 1e-6:
-            newField = self.getField((position) + direction / nrm * 0.51)
-        else:
-            newField = field
-        if (newField < 0).any() or (newField >= self.fields).any():
+    def isValid(self, position):
+        newField = position
+        if newField[0] < 0 or newField[1] < 0 or newField[0] >= self.fields[0] or newField[1] >= self.fields[1]:
             return False
         
-        validDir = field - position
+        # Is in the center of the field
+        if newField in self.walls:
+            return False
         
-        if numpy.linalg.norm(validDir) < 1e-6:
-            # Is in the center of the field
-            if any((newField == x).all() for x in self.walls):
-                return False
-        else:
-            if numpy.abs(numpy.dot(validDir, direction)) < 1e-6:
-                return False
         return True
+    
+    def areEqual(self, field1, field2):
+        return field1[0] == field2[0] and field1[1] == field2[1]
         
     def addPlayer(self, player):
         self.player = player        
         
     def addMonster(self, ghost):
-        self.monsters.append(ghost)                    
+        self.monsters.add(ghost)                    
         
     def initialize(self):
         # initilaize all the monsters
@@ -258,7 +260,7 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
         self.coins = []
         for x in range(0, self.fields[0]):
             for y in range(0, self.fields[1]):
-                newField = numpy.array([x, y])
+                newField = numpy.array([x, y], dtype=int)
                 if not any((newField == x).all() for x in self.walls) and \
                     not any((newField == x).all() for x in self.monsterStarts) and \
                     not any((newField == x).all() for x in self.playerstart):
@@ -272,17 +274,17 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
         """
         R = -1  # Living reward
         
-        newDirection = self.computeDirection(a)
-        if self.isValid(self.player.position, newDirection):
-            self.player.direction = newDirection
+        if self.isValid(self.getNewPosition(self.player.position, a)):
+            self.player.action = a
         
-        if self.isValid(self.player.position, self.player.direction):
-            self.player.setPosition(self.player.position + self.player.direction * self.speed)
+        nP = self.getNewPosition(self.player.position, self.player.action)
+        if self.isValid(nP):
+            self.player.setPosition(nP)
 
         # check if a coin is taken
         for coin in self.coins:
             if coin.exists:
-                if (self.getField(self.player.getPosition()) == self.getField(coin.getPosition())).all():
+                if self.player.getPosition() == coin.getPosition():
                     R += 10
                     coin.exists = False
                     break
@@ -300,21 +302,19 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
             lost = False
             for monster in self.monsters:
                 # check if a monster was hit
-                if numpy.linalg.norm(self.player.getPosition() - monster.getPosition(), 2) < 0.5:
+                if self.areEqual(self.player.getPosition(), monster.getPosition()):
                     lost = True
                     break
                 
                 
                 monster.act()
-                newDirection = self.computeDirection(monster.action)
-                if self.isValid(monster.position, newDirection):
-                    monster.direction = newDirection
-                    
-                if self.isValid(monster.position, monster.direction):
-                    monster.setPosition(monster.position + monster.direction * self.speed)            
+                
+                nP = self.getNewPosition(monster.position, monster.action)
+                if self.isValid(nP):
+                    monster.setPosition(nP)            
             
                 # check if a monster hit the player after the move
-                if numpy.linalg.norm(self.player.getPosition() - monster.getPosition(), 2) < 0.5:
+                if self.areEqual(self.player.getPosition(), monster.getPosition()):
                     lost = True
                     break
                 
@@ -328,11 +328,11 @@ class Arena(treeSearch.SearchProblem, mdp.MDP):
 class Arena1(Arena):
     def initArena(self):
                 
-        self.fields = numpy.array([9, 9])
-        self.playerstart = numpy.array([0, 0])
+        self.fields = (9, 9)
+        self.playerstart = (0, 0)
         self.monsterStarts = []
-        self.monsterStarts.append(numpy.array([4, 4]))
-        self.monsterStarts.append(numpy.array([4, 5]))
+        self.monsterStarts.append((4, 4))
+        self.monsterStarts.append((4, 5))
         
         for i in range(2):
             self.addMonster(Monster())
@@ -366,14 +366,51 @@ class Arena1(Arena):
 class Arena2(Arena):
     def initArena(self):
                 
-        self.fields = numpy.array([17, 8])
-        self.playerstart = numpy.array([0, 1])
+        self.fields = (20, 5)
+        self.playerstart = (0, 0)
         self.monsterStarts = []
-        # self.monsterStarts.append(numpy.array([4,4]))
-        # self.monsterStarts.append(numpy.array([4,5]))
+        self.monsterStarts.append((10,2))
+        #self.monsterStarts.append(numpy.array([2,11]))
         
-        # for i in range(2):
-        #    self.addMonster(Monster())
+        for _ in range(3):
+            self.addMonster(Monster())
+            
+        self.addWall((0, 2))
+        self.addWall((2, 2))
+        self.addWall((2, 3))
+        self.addWall((3, 3))
+        self.addWall((4, 3))
+        self.addWall((5, 3))
+        self.addWall((5, 2))
+        self.addWall((5, 1))
+        self.addWall((4, 1))
+        self.addWall((6, 1))
+        self.addWall((6, 3))
+        self.addWall((8, 3))
+        self.addWall((9, 3))
+        self.addWall((9, 2))
+        self.addWall((10, 3))
+        self.addWall((11, 3))
+        self.addWall((11, 2))
+        self.addWall((12, 3))
+        self.addWall((14, 3))
+        self.addWall((15, 3))
+        self.addWall((15, 2))
+        self.addWall((15, 1))
+        self.addWall((14, 1))
+        self.addWall((16, 1))
+        self.addWall((16, 3))
+        self.addWall((17, 3))
+        self.addWall((18, 3))       
+            
+            
+                
+class Test_Arena1(Arena):
+    def initArena(self):
+                
+        self.fields = (17, 8)
+        self.playerstart = (0, 1)
+        self.monsterStarts = []
         
         
         self.addWall((1, 0))
@@ -433,10 +470,10 @@ class Arena2(Arena):
 class SimpleArena1(Arena):
     def initArena(self):
                 
-        self.fields = numpy.array([3, 2])
-        self.playerstart = numpy.array([2, 0])
+        self.fields = (3, 2)
+        self.playerstart = (2, 0)
         self.monsterStarts = []
-        self.monsterStarts.append(numpy.array([1, 1]))
+        self.monsterStarts.append((1, 1))
         
         for _ in range(1):
             self.addMonster(Monster())
@@ -455,8 +492,15 @@ class ArenaCanvas(tkinter.Canvas):
         tkinter.Canvas.__init__(self, root)
         self.fieldsize = 50        
       
+    def mouseClick(self, event):
+        fieldx = int(event.x / 50)
+        fieldy = int(event.y / 50)
+        print('(',fieldx, ',' , fieldy,')', sep='')
+      
     def initialize(self):
         self.TkObjects = {}
+        
+        self.bind("<Button-1>", self.mouseClick)
         
         # DRAWING
         self.battlefield = self.create_rectangle(0, 0, self.arena.fields[0] * self.fieldsize, self.arena.fields[1] * self.fieldsize, fill='green')
@@ -519,4 +563,34 @@ class ArenaCanvas(tkinter.Canvas):
         # elif self.arena.lost:
         #    self.create_text(self.arena.fields[0]*self.fieldsize / 2, self.arena.fields[1]*self.fieldsize / 2 , text='You Lost, Score = ' + str(self.arena.player.getScore()), fill='white')
         
-        self.master.after(10, self.refresh)
+        self.master.after(40, self.refresh) # 10 fps
+        
+def initializeCanvas(player, root):
+    '''
+    Routine uch that the arena can be painted or not in a different thread
+    '''
+    paint = True
+    if paint:
+        
+        # TODO: solve this more nicely
+        try:
+            root.bind("<Key>", player.keyInput)
+        except:
+            pass
+        
+        canvas = ArenaCanvas(root, player.problem)
+        canvas.initialize()
+        # canvas.pack()
+        canvas.pack(fill=tkinter.BOTH, expand=1)
+        # root.resizable(width=False, height=False)
+    
+        # create a toplevel menu
+        menubar = tkinter.Menu(root)
+        # menubar.add_command(label="Restart", command=self.start)
+        # root.bind_all("<Control-r>", self.start)
+        # display the menu
+        root.config(menu=menubar)
+    
+        root.after(100, canvas.refresh)
+    
+        # tkinter.mainloop()

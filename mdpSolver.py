@@ -245,7 +245,8 @@ class PropertyFunction():
     mother for property function
     '''
     def __init__(self, problem):
-        self.weight = 1
+        self.weight = 0
+        self.alpha = 1 # learning factor (should not be too high...) 
         self.problem = problem # get access to the problem (easier than direct state evaluation)
         
     def evaluate(self, s, a):
@@ -259,7 +260,7 @@ class QApproximator():
         
         # initialize
         self.gamma = 0.9
-        self.epsilon = 0
+        self.epsilon = 0.3
         self.N = 0
         
     def addPropertyFunction(self, prop):
@@ -311,9 +312,11 @@ class QApproximator():
         
         # update QValues
         self.N += 1
-        alpha = 0.05 # 1 / self.N
         for prop in self.properties:
-            prop.weight += alpha * difference * prop.evaluate(s, a)
+            v = prop.evaluate(s, a)
+            prop.weight += prop.alpha * difference * v
+            prop.alpha = max(prop.alpha * (1-v), 0.001)
+                
 
     def choseAction(self, s):
         # chose an action depending on probability
@@ -324,7 +327,7 @@ class QApproximator():
         
     def run(self):
         s = random.choice(self.problem.getStartStates())
-        maxI = 1000 
+        maxI = 1000
         for i in range(maxI):
             if i > maxI / 2:
                 self.epsilon = self.epsilon

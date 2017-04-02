@@ -80,7 +80,7 @@ class SailProblem(SearchProblem):
         return self.g
     
     def getNewPosition(self, s, action):
-        return (s[0] + action.getMove()[0], s[1] + action.getMove()[1]) 
+        return (s[0] + action[0], s[1] + action[1]) 
         
     def solvedSearch(self, s):
         SearchProblem.solvedSearch(self, s)
@@ -129,7 +129,7 @@ class MainTestSearch(SearchProblem):
         return ['G']
     
     def getNewPosition(self, s, action):
-        return action.getMove()
+        return action
         
     def solvedSearch(self, s):
         if s == 'G':
@@ -158,7 +158,7 @@ class EasyTestSearchOne(SearchProblem):
         return ['G']
     
     def getNewPosition(self, s, action):
-        return action.getMove()
+        return action
         
     def solvedSearch(self, s):
         if s == 'G':
@@ -214,7 +214,7 @@ class SearchStrategy:
     def updateFringe(self, actions):
         'Add the Candidates to the fringe'
         for action in actions:
-            newPos = self.problem.getNewPosition(self.getCurrentState(), action)
+            newPos = self.problem.getNewPosition(self.getCurrentState(), action.getMove())
             if newPos not in self.currentFringe.getPath():
                 self.fringe.add(FringeMember(self.currentFringe.getPath() + [newPos], self.currentFringe.getCostTotal() + action.getCost()))
                 
@@ -224,8 +224,8 @@ class SearchStrategy:
     
     def explore(self):
         ''' Explore the problem'''
-        numberOfActions = self.problem.getSearchActions(self.getCurrentState())
-        self.updateFringe(numberOfActions)
+        distanceToLink = self.problem.getSearchActions(self.getCurrentState())
+        self.updateFringe(distanceToLink)
         
 class DepthFirstSearch(SearchStrategy):
         
@@ -274,21 +274,19 @@ class AstarSearch(SearchStrategy):
     def updateCurrentFringemember(self):
         self.currentFringe = min(self.fringe, key=lambda x: self.heuristic(x, self.problem) + x.getCostTotal())
 
-def treeSearch(problem, strategy):
+def treeSearch(problem, strategy, maxCost=float("inf")):
     ':type problem: SearchProblem'
     ':type strategy: SearchStrategy'
    
     # start = time.time()
-    found = False
     # problem.initialize()
     while True:
         'If there are no new candidate the search has failed'
         if strategy.getCurrentFringe() is None:
             break
         
-        if problem.solvedSearch(strategy.getCurrentState()):
+        if problem.solvedSearch(strategy.getCurrentState() or strategy.getCurrentFringe().getCostTotal() > maxCost):
             'If the problem is solvedSearch we are happy'
-            found = True
             break
         else:
             'If the problem is not solvedSearch, we have to explore with the canidate'
